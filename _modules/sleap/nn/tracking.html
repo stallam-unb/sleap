@@ -12,7 +12,6 @@
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -523,13 +522,13 @@
 <div class="viewcode-block" id="Tracker.final_pass"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.tracking.html#sleap.nn.tracking.Tracker.final_pass">[docs]</a>    <span class="k">def</span> <span class="nf">final_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frames</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LabeledFrame</span><span class="p">]):</span>
         <span class="sd">&quot;&quot;&quot;Called after tracking has run on all frames to do any post-processing.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cleaner</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="s2">&quot;DEPRECATION WARNING: &quot;</span>
-                <span class="s2">&quot;--clean_instance_count is deprecated (but still applied to &quot;</span>
-                <span class="s2">&quot;clean results *after* tracking). Use --target_instance_count &quot;</span>
-                <span class="s2">&quot;and --pre_cull_to_target instead to cull instances *before* &quot;</span>
-                <span class="s2">&quot;tracking.&quot;</span>
-            <span class="p">)</span>
+        <span class="c1">#     print(</span>
+        <span class="c1">#         &quot;DEPRECATION WARNING: &quot;</span>
+        <span class="c1">#         &quot;--clean_instance_count is deprecated (but still applied to &quot;</span>
+        <span class="c1">#         &quot;clean results *after* tracking). Use --target_instance_count &quot;</span>
+        <span class="c1">#         &quot;and --pre_cull_to_target instead to cull instances *before* &quot;</span>
+        <span class="c1">#         &quot;tracking.&quot;</span>
+        <span class="c1">#     )</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">cleaner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_instance_count</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_connect_single_breaks</span><span class="p">:</span>
             <span class="n">connect_single_track_breaks</span><span class="p">(</span><span class="n">frames</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_instance_count</span><span class="p">)</span></div>
@@ -683,14 +682,14 @@
         <span class="n">option</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span>
         <span class="n">option</span><span class="p">[</span>
             <span class="s2">&quot;help&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;DEPRECATED: Target number of instances to clean *after* tracking.&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Target number of instances to clean *after* tracking.&quot;</span>
         <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
 
         <span class="n">option</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;clean_iou_threshold&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">option</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span>
         <span class="n">option</span><span class="p">[</span>
             <span class="s2">&quot;help&quot;</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;DEPRECATED: IOU to use when culling instances *after* tracking.&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;IOU to use when culling instances *after* tracking.&quot;</span>
         <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
 
         <span class="n">option</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;similarity&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;instance&quot;</span><span class="p">)</span>
@@ -1249,7 +1248,7 @@
       &copy;2019–2020, Murthy Lab @ Princeton.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>

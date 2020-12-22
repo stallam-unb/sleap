@@ -1,0 +1,357 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sleap.nn.architectures.pretrained_encoders &#8212; SLEAP  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for sleap.nn.architectures.pretrained_encoders</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Encoder-decoder backbones with pretrained encoder models.</span>
+
+<span class="sd">This module enables encoder-decoder style architectures using a wide range of</span>
+<span class="sd">state-of-the-art architectures as the encoder, with a UNet-like upsampling stack that</span>
+<span class="sd">also takes advantage of skip connections from the encoder blocks. Additionally, the</span>
+<span class="sd">encoder models can use ImageNet-pretrained weights for initialization.</span>
+
+<span class="sd">This module is made possible by the work by Pavel Yakubovskiy who graciously put</span>
+<span class="sd">together a library implementing common pretrained fully-convolutional architectures and</span>
+<span class="sd">their weights.</span>
+
+<span class="sd">For more info, see the source repositories:</span>
+<span class="sd">    - https://github.com/qubvel/segmentation_models</span>
+<span class="sd">    - https://github.com/qubvel/classification_models</span>
+
+<span class="sd">License:</span>
+
+<span class="sd">The MIT License</span>
+
+<span class="sd">Copyright (c) 2018, Pavel Yakubovskiy</span>
+
+<span class="sd">Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="sd">of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="sd">in the Software without restriction, including without limitation the rights</span>
+<span class="sd">to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="sd">copies of the Software, and to permit persons to whom the Software is</span>
+<span class="sd">furnished to do so, subject to the following conditions:</span>
+
+<span class="sd">The above copyright notice and this permission notice shall be included in</span>
+<span class="sd">all copies or substantial portions of the Software.</span>
+
+<span class="sd">THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="sd">IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="sd">FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="sd">AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="sd">LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="sd">OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN</span>
+<span class="sd">THE SOFTWARE.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">attr</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">sleap.nn.architectures.upsampling</span> <span class="kn">import</span> <span class="n">IntermediateFeature</span>
+<span class="kn">from</span> <span class="nn">sleap.nn.data.normalization</span> <span class="kn">import</span> <span class="n">ensure_rgb</span>
+<span class="kn">from</span> <span class="nn">sleap.nn.config</span> <span class="kn">import</span> <span class="n">PretrainedEncoderConfig</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SM_FRAMEWORK&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tf.keras&quot;</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">redirect_stdout</span>
+
+<span class="k">with</span> <span class="n">redirect_stdout</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()):</span>
+    <span class="c1"># Import segmentation_models suppressing output to stdout about backend.</span>
+    <span class="kn">import</span> <span class="nn">segmentation_models</span> <span class="k">as</span> <span class="nn">sm</span>
+
+
+<span class="n">AVAILABLE_ENCODERS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;vgg16&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;vgg19&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;resnet18&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;resnet34&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;resnet101&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;resnet152&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;resnext50&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;resnext101&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inceptionv3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inceptionresnetv2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;densenet169&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;densenet201&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;seresnet18&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;seresnet34&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;seresnet50&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;seresnet101&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;seresnet152&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;seresnext50&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;seresnext101&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;senet154&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mobilenet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mobilenetv2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb3&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb4&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb5&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb6&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;efficientnetb7&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="UnetPretrainedEncoder"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">auto_attribs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">UnetPretrainedEncoder</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;UNet with an (optionally) pretrained encoder model.</span>
+
+<span class="sd">    This backbone enables the use of a variety of popular neural network architectures</span>
+<span class="sd">    for feature extraction in the backbone. These can be used with ImageNet-pretrained</span>
+<span class="sd">    weights for initialization. The decoder (upsampling stack) receives skip connections</span>
+<span class="sd">    from intermediate activations in the encoder blocks.</span>
+
+<span class="sd">    All of the encoder models have a maximum stride of 32 and the input does not need to</span>
+<span class="sd">    be preprocessed in any special way. Grayscale images will be tiled to have 3</span>
+<span class="sd">    channels automatically.</span>
+
+<span class="sd">    See https://github.com/qubvel/classification_models#specification for more</span>
+<span class="sd">    information on the individual backbones.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        encoder: Name of the model to use as the encoder. Valid encoder names are:</span>
+<span class="sd">            - `&quot;vgg16&quot;, &quot;vgg19&quot;,`</span>
+<span class="sd">            - `&quot;resnet18&quot;, &quot;resnet34&quot;, &quot;resnet50&quot;, &quot;resnet101&quot;, &quot;resnet152&quot;`</span>
+<span class="sd">            - `&quot;resnext50&quot;, &quot;resnext101&quot;`</span>
+<span class="sd">            - `&quot;inceptionv3&quot;, &quot;inceptionresnetv2&quot;`</span>
+<span class="sd">            - `&quot;densenet121&quot;, &quot;densenet169&quot;, &quot;densenet201&quot;`</span>
+<span class="sd">            - `&quot;seresnet18&quot;, &quot;seresnet34&quot;, &quot;seresnet50&quot;, &quot;seresnet101&quot;, &quot;seresnet152&quot;,`</span>
+<span class="sd">              `&quot;seresnext50&quot;, &quot;seresnext101&quot;, &quot;senet154&quot;`</span>
+<span class="sd">            - `&quot;mobilenet&quot;, &quot;mobilenetv2&quot;`</span>
+<span class="sd">            - `&quot;efficientnetb0&quot;, &quot;efficientnetb1&quot;, &quot;efficientnetb2&quot;, &quot;efficientnetb3&quot;,`</span>
+<span class="sd">              `&quot;efficientnetb4&quot;, &quot;efficientnetb5&quot;, &quot;efficientnetb6&quot;, &quot;efficientnetb7&quot;`</span>
+<span class="sd">            Defaults to `&quot;mobilenetv2&quot;`</span>
+<span class="sd">        decoder_filters: A tuple of integers denoting the number of filters to use in</span>
+<span class="sd">            the upsampling blocks of the decoder, starting from the lowest resolution</span>
+<span class="sd">            block. The length of this attribute also specifies the number of upsampling</span>
+<span class="sd">            steps and therefore the output stride of the backbone. Specify 5 filter</span>
+<span class="sd">            numbers to get an output stride of 1 (same size as the input). Defaults to</span>
+<span class="sd">        pretrained: If `True` (the default), load pretrained weights for the encoder. If</span>
+<span class="sd">            `False`, the same model architecture will be used for the encoder but the</span>
+<span class="sd">            weights will be randomly initialized.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">encoder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;efficientnetb0&quot;</span><span class="p">,</span> <span class="n">validator</span><span class="o">=</span><span class="n">attr</span><span class="o">.</span><span class="n">validators</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">AVAILABLE_ENCODERS</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">decoder_filters</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+    <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="UnetPretrainedEncoder.from_config"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.from_config">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">PretrainedEncoderConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;UnetPretrainedEncoder&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create the backbone from a configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config: A `PretrainedEncoderConfig` instance specifying the</span>
+<span class="sd">                configuration of the backbone.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An instantiated `UnetPretrainedEncoder`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">up_blocks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="mi">32</span> <span class="o">//</span> <span class="n">config</span><span class="o">.</span><span class="n">output_stride</span><span class="p">))</span>
+        <span class="n">decoder_filters</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">decoder_filters</span> <span class="o">*</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">decoder_filters_rate</span> <span class="o">**</span> <span class="n">i</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">up_blocks</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">encoder</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">encoder</span><span class="p">,</span>
+            <span class="n">pretrained</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">pretrained</span><span class="p">,</span>
+            <span class="n">decoder_filters</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">decoder_filters</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">down_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of downsampling blocks in the encoder.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">5</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">up_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of upsampling blocks in the decoder.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder_filters</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">maximum_stride</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the maximum encoder stride relative to the input.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">32</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output_stride</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the stride of the output of the decoder.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">down_blocks</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">up_blocks</span><span class="p">))</span>
+
+<div class="viewcode-block" id="UnetPretrainedEncoder.make_backbone"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.make_backbone">[docs]</a>    <span class="k">def</span> <span class="nf">make_backbone</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x_in</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">IntermediateFeature</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;Create the backbone and return the output tensors for building a model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x_in: A `tf.Tensor` representing the input to this backbone. This is</span>
+<span class="sd">                typically an instance of `tf.keras.layers.Input()` but can also be any</span>
+<span class="sd">                rank-4 tensor. Can be grayscale or RGB.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple of (`x_main`, `intermediate_activations`).</span>
+
+<span class="sd">            `x_main` is the output tensor from the last upsampling block.</span>
+
+<span class="sd">            `intermediate_activations` is a list of `IntermediateActivation`s containing</span>
+<span class="sd">            tensors with the outputs from each block of the decoder for use in building</span>
+<span class="sd">            multi-output models at different feature strides.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">img_shape</span> <span class="o">=</span> <span class="n">x_in</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretrained</span> <span class="ow">and</span> <span class="n">img_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Add preprocessing layer if needed.</span>
+            <span class="n">x_in</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Lambda</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">ensure_rgb</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ensure_rgb&quot;</span><span class="p">)(</span>
+                <span class="n">x_in</span>
+            <span class="p">)</span>
+            <span class="n">img_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Create base model.</span>
+        <span class="n">base_model</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">unet</span><span class="o">.</span><span class="n">Unet</span><span class="p">(</span>
+            <span class="n">backbone_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">,</span>
+            <span class="n">input_shape</span><span class="o">=</span><span class="n">img_shape</span><span class="p">,</span>
+            <span class="n">classes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+            <span class="n">encoder_weights</span><span class="o">=</span><span class="s2">&quot;imagenet&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretrained</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">decoder_block_type</span><span class="o">=</span><span class="s2">&quot;upsampling&quot;</span><span class="p">,</span>
+            <span class="n">decoder_filters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder_filters</span><span class="p">,</span>
+            <span class="n">decoder_use_batchnorm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">layers</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="p">,</span>
+            <span class="n">models</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="p">,</span>
+            <span class="n">backend</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span>
+            <span class="n">utils</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">utils</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Collect intermediate features from the decoder.</span>
+        <span class="n">x_outs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">up_blocks</span><span class="p">):</span>
+            <span class="n">x_outs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base_model</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;decoder_stage</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">b_relu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
+        <span class="c1"># Build a model that outputs all decoder block activations.</span>
+        <span class="n">features_model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">base_model</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="n">x_outs</span><span class="p">)</span>
+
+        <span class="c1"># Connect the inputs to the model graph.</span>
+        <span class="n">backbone_model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_source_inputs</span><span class="p">(</span><span class="n">x_in</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">features_model</span><span class="p">(</span><span class="n">x_in</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Collect output tensors.</span>
+        <span class="n">intermediate_features</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">up_blocks</span><span class="p">):</span>
+            <span class="n">intermediate_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">IntermediateFeature</span><span class="p">(</span>
+                    <span class="n">tensor</span><span class="o">=</span><span class="n">backbone_model</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">stride</span><span class="o">=</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="mi">4</span> <span class="o">-</span> <span class="n">i</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">intermediate_features</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tensor</span>
+
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">intermediate_features</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">SLEAP</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/reference.html">Feature Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019–2020, Murthy Lab @ Princeton.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

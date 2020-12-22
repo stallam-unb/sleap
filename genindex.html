@@ -12,7 +12,6 @@
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
    
@@ -165,10 +164,10 @@
         <li><a href="_autosummary/sleap.io.format.text.html#sleap.io.format.text.TextAdaptor.all_exts">(sleap.io.format.text.TextAdaptor property)</a>
 </li>
       </ul></li>
-      <li><a href="_autosummary/sleap.nn.data.confidence_maps.html#sleap.nn.data.confidence_maps.InstanceConfidenceMapGenerator.all_instances">all_instances (sleap.nn.data.confidence_maps.InstanceConfidenceMapGenerator attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/sleap.nn.data.confidence_maps.html#sleap.nn.data.confidence_maps.InstanceConfidenceMapGenerator.all_instances">all_instances (sleap.nn.data.confidence_maps.InstanceConfidenceMapGenerator attribute)</a>
+</li>
       <li><a href="_autosummary/sleap.gui.widgets.video.html#sleap.gui.widgets.video.GraphicsView.all_instances">all_instances() (sleap.gui.widgets.video.GraphicsView property)</a>
 
       <ul>
@@ -268,11 +267,7 @@
       <li><a href="_autosummary/sleap.nn.config.optimization.html#sleap.nn.config.optimization.AugmentationConfig">AugmentationConfig (class in sleap.nn.config.optimization)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.augmenter">augmenter (sleap.nn.data.augmentation.ImgaugAugmenter attribute)</a>
-
-      <ul>
-        <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomCropper.augmenter">(sleap.nn.data.augmentation.RandomCropper attribute)</a>
 </li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -517,6 +512,8 @@
 </li>
       <li><a href="_autosummary/sleap.nn.data.confidence_maps.html#sleap.nn.data.confidence_maps.MultiConfidenceMapGenerator.centroids">centroids (sleap.nn.data.confidence_maps.MultiConfidenceMapGenerator attribute)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.centroids_key">centroids_key (sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.CentroidsHeadConfig">CentroidsHeadConfig (class in sleap.nn.config.model)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.CommandContext.changestack_clear">changestack_clear() (sleap.gui.commands.CommandContext method)</a>
@@ -725,8 +722,12 @@
         <li><a href="_autosummary/sleap.nn.peak_finding.html#sleap.nn.peak_finding.crop_bboxes">(in module sleap.nn.peak_finding)</a>
 </li>
       </ul></li>
-      <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.crop_height">crop_height (sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
+      <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomCropper.crop_height">crop_height (sleap.nn.data.augmentation.RandomCropper attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.crop_height">(sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/sleap.nn.config.data.html#sleap.nn.config.data.InstanceCroppingConfig.crop_size">crop_size (sleap.nn.config.data.InstanceCroppingConfig attribute)</a>
 
       <ul>
@@ -737,8 +738,12 @@
       </ul></li>
       <li><a href="_autosummary/sleap.nn.config.data.html#sleap.nn.config.data.InstanceCroppingConfig.crop_size_detection_padding">crop_size_detection_padding (sleap.nn.config.data.InstanceCroppingConfig attribute)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.crop_width">crop_width (sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
+      <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomCropper.crop_width">crop_width (sleap.nn.data.augmentation.RandomCropper attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.crop_width">(sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/sleap.nn.tracker.components.html#sleap.nn.tracker.components.cull_frame_instances">cull_frame_instances() (in module sleap.nn.tracker.components)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.tracker.components.html#sleap.nn.tracker.components.cull_instances">cull_instances() (in module sleap.nn.tracker.components)</a>
@@ -798,6 +803,14 @@
       <li><a href="_autosummary/sleap.gui.learning.runners.html#sleap.gui.learning.runners.DatasetItemForInference">DatasetItemForInference (class in sleap.gui.learning.runners)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.EncoderDecoder.decoder_features_stride">decoder_features_stride() (sleap.nn.architectures.encoder_decoder.EncoderDecoder property)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.decoder_filters">decoder_filters (sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.PretrainedEncoderConfig.decoder_filters">(sleap.nn.config.model.PretrainedEncoderConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.PretrainedEncoderConfig.decoder_filters_rate">decoder_filters_rate (sleap.nn.config.model.PretrainedEncoderConfig attribute)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.EncoderDecoder.decoder_stack">decoder_stack() (sleap.nn.architectures.encoder_decoder.EncoderDecoder property)</a>
 
@@ -1072,6 +1085,8 @@
       <li><a href="_autosummary/sleap.nn.architectures.hrnet.html#sleap.nn.architectures.hrnet.HigherHRNet.down_blocks">down_blocks() (sleap.nn.architectures.hrnet.HigherHRNet property)</a>
 
       <ul>
+        <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.down_blocks">(sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder property)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNetv1.down_blocks">(sleap.nn.architectures.resnet.ResNetv1 property)</a>
 </li>
       </ul></li>
@@ -1109,11 +1124,15 @@
 </li>
       <li><a href="_autosummary/sleap.nn.config.optimization.html#sleap.nn.config.optimization.EarlyStoppingConfig">EarlyStoppingConfig (class in sleap.nn.config.optimization)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.edge_inds">edge_inds (sleap.nn.paf_grouping.PAFScorer attribute)</a>
+</li>
       <li><a href="_autosummary/sleap.skeleton.html#sleap.skeleton.Skeleton.edge_inds">edge_inds() (sleap.skeleton.Skeleton property)</a>
 </li>
       <li><a href="_autosummary/sleap.skeleton.html#sleap.skeleton.Skeleton.edge_names">edge_names() (sleap.skeleton.Skeleton property)</a>
 </li>
       <li><a href="_autosummary/sleap.skeleton.html#sleap.skeleton.Skeleton.edge_to_index">edge_to_index() (sleap.skeleton.Skeleton method)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.edge_types">edge_types (sleap.nn.paf_grouping.PAFScorer attribute)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.EdgeConnection">EdgeConnection (class in sleap.nn.paf_grouping)</a>
 </li>
@@ -1147,6 +1166,12 @@
 </li>
       <li><a href="_autosummary/sleap.gui.widgets.slider.html#sleap.gui.widgets.slider.VideoSlider.enabled">enabled() (sleap.gui.widgets.slider.VideoSlider method)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.encoder">encoder (sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.PretrainedEncoderConfig.encoder">(sleap.nn.config.model.PretrainedEncoderConfig attribute)</a>
+</li>
+      </ul></li>
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.EncoderDecoder.encoder_features_stride">encoder_features_stride() (sleap.nn.architectures.encoder_decoder.EncoderDecoder property)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.EncoderDecoder.encoder_stack">encoder_stack() (sleap.nn.architectures.encoder_decoder.EncoderDecoder property)</a>
@@ -1301,6 +1326,8 @@
 </li>
       <li><a href="_autosummary/sleap.nn.architectures.hourglass.html#sleap.nn.architectures.hourglass.Hourglass.filter_increase">filter_increase (sleap.nn.architectures.hourglass.Hourglass attribute)</a>
 </li>
+      <li><a href="_autosummary/sleap.gui.release_checker.html#sleap.gui.release_checker.filter_test_releases">filter_test_releases() (in module sleap.gui.release_checker)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.SimpleConvBlock.filters">filters (sleap.nn.architectures.encoder_decoder.SimpleConvBlock attribute)</a>
 
       <ul>
@@ -1354,8 +1381,6 @@
       <li><a href="_autosummary/sleap.io.pathutils.html#sleap.io.pathutils.find_changed_subpath">find_changed_subpath() (in module sleap.io.pathutils)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.learning.configs.html#sleap.gui.learning.configs.TrainingConfigsGetter.find_configs">find_configs() (sleap.gui.learning.configs.TrainingConfigsGetter method)</a>
-</li>
-      <li><a href="_autosummary/sleap.gui.learning.configs.html#sleap.gui.learning.configs.TrainingConfigsGetter.find_configs_in_dir">find_configs_in_dir() (sleap.gui.learning.configs.TrainingConfigsGetter method)</a>
 </li>
       <li><a href="_autosummary/sleap.io.dataset.html#sleap.io.dataset.LabelsDataCache.find_fancy_frame_idxs">find_fancy_frame_idxs() (sleap.io.dataset.LabelsDataCache method)</a>
 </li>
@@ -1433,10 +1458,10 @@
       </ul></li>
       <li><a href="_autosummary/sleap.info.feature_suggestions.html#sleap.info.feature_suggestions.ItemStack.flatten">flatten() (sleap.info.feature_suggestions.ItemStack method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/sleap.nn.data.edge_maps.html#sleap.nn.data.edge_maps.PartAffinityFieldsGenerator.flatten_channels">flatten_channels (sleap.nn.data.edge_maps.PartAffinityFieldsGenerator attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/sleap.nn.tracking.html#sleap.nn.tracking.FlowCandidateMaker.flow_shift_instances">flow_shift_instances() (sleap.nn.tracking.FlowCandidateMaker static method)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.tracking.html#sleap.nn.tracking.FlowCandidateMaker">FlowCandidateMaker (class in sleap.nn.tracking)</a>
@@ -1493,6 +1518,8 @@
 
       <ul>
         <li><a href="_autosummary/sleap.nn.architectures.leap.html#sleap.nn.architectures.leap.LeapCNN.from_config">(sleap.nn.architectures.leap.LeapCNN class method)</a>
+</li>
+        <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.from_config">(sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder class method)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNetv1.from_config">(sleap.nn.architectures.resnet.ResNetv1 class method)</a>
 </li>
@@ -1605,6 +1632,8 @@
       </ul></li>
       <li><a href="_autosummary/sleap.nn.data.resizing.html#sleap.nn.data.resizing.Resizer.full_image_key">full_image_key (sleap.nn.data.resizing.Resizer attribute)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.LambdaMap.func">func (sleap.nn.data.general.LambdaMap attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1646,6 +1675,8 @@
       <li><a href="_autosummary/sleap.gui.overlays.confmaps.html#sleap.gui.overlays.confmaps.ConfMapPlot.get_conf_image">get_conf_image() (sleap.gui.overlays.confmaps.ConfMapPlot method)</a>
 </li>
       <li><a href="_autosummary/sleap.util.html#sleap.util.get_config_file">get_config_file() (in module sleap.util)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.get_connection_candidates">get_connection_candidates() (in module sleap.nn.paf_grouping)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.system.html#sleap.nn.system.get_current_gpu">get_current_gpu() (in module sleap.nn.system)</a>
 </li>
@@ -1738,6 +1769,8 @@
       <li><a href="_autosummary/sleap.info.write_tracking_h5.html#sleap.info.write_tracking_h5.get_occupancy_and_points_matrices">get_occupancy_and_points_matrices() (in module sleap.info.write_tracking_h5)</a>
 </li>
       <li><a href="_autosummary/sleap.util.html#sleap.util.get_package_file">get_package_file() (in module sleap.util)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.get_paf_lines">get_paf_lines() (in module sleap.nn.paf_grouping)</a>
 </li>
       <li><a href="_autosummary/sleap.info.summary.html#sleap.info.summary.StatisticSeries.get_point_count_series">get_point_count_series() (sleap.info.summary.StatisticSeries method)</a>
 </li>
@@ -1867,7 +1900,11 @@
 </li>
       <li><a href="_autosummary/sleap.nn.data.grouping.html#sleap.nn.data.grouping.group_examples_iter">group_examples_iter() (in module sleap.nn.data.grouping)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.group_peaks">group_peaks() (sleap.nn.paf_grouping.PAFScorer method)</a>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.group_instances">group_instances() (sleap.nn.paf_grouping.PAFScorer method)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.group_instances_batch">group_instances_batch() (in module sleap.nn.paf_grouping)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.group_instances_sample">group_instances_sample() (in module sleap.nn.paf_grouping)</a>
 </li>
       <li><a href="_autosummary/sleap.info.feature_suggestions.html#sleap.info.feature_suggestions.ItemStack.group_sets">group_sets (sleap.info.feature_suggestions.ItemStack attribute)</a>
 </li>
@@ -1999,9 +2036,13 @@
 </li>
       <li><a href="_autosummary/sleap.gui.suggestions.html#sleap.gui.suggestions.VideoFrameSuggestions.image_feature_based_method">image_feature_based_method() (sleap.gui.suggestions.VideoFrameSuggestions class method)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.data.normalization.html#sleap.nn.data.normalization.Normalizer.image_key">image_key (sleap.nn.data.normalization.Normalizer attribute)</a>
+      <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.image_key">image_key (sleap.nn.data.augmentation.ImgaugAugmenter attribute)</a>
 
       <ul>
+        <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.image_key">(sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
+</li>
+        <li><a href="_autosummary/sleap.nn.data.normalization.html#sleap.nn.data.normalization.Normalizer.image_key">(sleap.nn.data.normalization.Normalizer attribute)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.data.resizing.html#sleap.nn.data.resizing.Resizer.image_key">(sleap.nn.data.resizing.Resizer attribute)</a>
 </li>
       </ul></li>
@@ -2081,6 +2122,8 @@
 </li>
       <li><a href="_autosummary/sleap.nn.system.html#sleap.nn.system.initialize_devices">initialize_devices() (in module sleap.nn.system)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.LambdaMap.input_key_names">input_key_names (sleap.nn.data.general.LambdaMap attribute)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.input_keys">input_keys() (sleap.nn.data.augmentation.ImgaugAugmenter property)</a>
 
       <ul>
@@ -2111,6 +2154,8 @@
         <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.KeyFilter.input_keys">(sleap.nn.data.general.KeyFilter property)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.KeyRenamer.input_keys">(sleap.nn.data.general.KeyRenamer property)</a>
+</li>
+        <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.LambdaMap.input_keys">(sleap.nn.data.general.LambdaMap property)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.data.inference.html#sleap.nn.data.inference.PredictedCenterInstanceNormalizer.input_keys">(sleap.nn.data.inference.PredictedCenterInstanceNormalizer property)</a>
 </li>
@@ -2163,8 +2208,6 @@
       </ul></li>
       <li><a href="_autosummary/sleap.gui.learning.configs.html#sleap.gui.learning.configs.TrainingConfigsGetter.insert_first">insert_first() (sleap.gui.learning.configs.TrainingConfigsGetter method)</a>
 </li>
-      <li><a href="_autosummary/sleap.gui.learning.configs.html#sleap.gui.learning.configs.TrainingConfigsGetter.insert_last">insert_last() (sleap.gui.learning.configs.TrainingConfigsGetter method)</a>
-</li>
       <li><a href="_autosummary/sleap.rangelist.html#sleap.rangelist.RangeList.insert_list">insert_list() (sleap.rangelist.RangeList method)</a>
 </li>
       <li><a href="_autosummary/sleap.instance.html#sleap.instance.Instance">Instance (class in sleap.instance)</a>
@@ -2201,6 +2244,14 @@
         <li><a href="_autosummary/sleap.instance.html#sleap.instance.LabeledFrame.instances">(sleap.instance.LabeledFrame property)</a>
 </li>
         <li><a href="_autosummary/sleap.io.dataset.html#sleap.io.dataset.Labels.instances">(sleap.io.dataset.Labels method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.instances_key">instances_key (sleap.nn.data.augmentation.ImgaugAugmenter attribute)</a>
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.data.instance_centroids.html#sleap.nn.data.instance_centroids.InstanceCentroidFinder.instances_key">(sleap.nn.data.instance_centroids.InstanceCentroidFinder attribute)</a>
+</li>
+        <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.instances_key">(sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
 </li>
       </ul></li>
       <li><a href="_autosummary/sleap.instance.html#sleap.instance.LabeledFrame.instances_to_show">instances_to_show() (sleap.instance.LabeledFrame property)</a>
@@ -2419,6 +2470,8 @@
 </li>
       <li><a href="_autosummary/sleap.nn.data.dataset_ops.html#sleap.nn.data.dataset_ops.LambdaFilter">LambdaFilter (class in sleap.nn.data.dataset_ops)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.LambdaMap">LambdaMap (class in sleap.nn.data.general)</a>
+</li>
       <li><a href="_autosummary/sleap.io.video.html#sleap.io.video.HDF5Video.last_frame_idx">last_frame_idx() (sleap.io.video.HDF5Video property)</a>
 
       <ul>
@@ -2483,6 +2536,8 @@
 </li>
       <li><a href="_autosummary/sleap.skeleton.html#sleap.skeleton.Skeleton.load_mat">load_mat() (sleap.skeleton.Skeleton class method)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.inference.html#sleap.nn.inference.load_model">load_model() (in module sleap.nn.inference)</a>
+</li>
       <li><a href="_autosummary/sleap.io.legacy.html#sleap.io.legacy.load_predicted_labels_json_old">load_predicted_labels_json_old() (in module sleap.io.legacy)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.dialogs.shortcuts.html#sleap.gui.dialogs.shortcuts.ShortcutDialog.load_shortcuts">load_shortcuts() (sleap.gui.dialogs.shortcuts.ShortcutDialog method)</a>
@@ -2538,6 +2593,8 @@
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.EncoderDecoder.make_backbone">make_backbone() (sleap.nn.architectures.encoder_decoder.EncoderDecoder method)</a>
 
       <ul>
+        <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.make_backbone">(sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder method)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNetv1.make_backbone">(sleap.nn.architectures.resnet.ResNetv1 method)</a>
 </li>
       </ul></li>
@@ -2611,6 +2668,8 @@
 </li>
       <li><a href="_autosummary/sleap.gui.dialogs.importvideos.html#sleap.gui.dialogs.importvideos.ImportParamWidget.make_layout">make_layout() (sleap.gui.dialogs.importvideos.ImportParamWidget method)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.make_line_subs">make_line_subs() (in module sleap.nn.paf_grouping)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.model.html#sleap.nn.model.Model.make_model">make_model() (sleap.nn.model.Model method)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.learning.scopedkeydict.html#sleap.gui.learning.scopedkeydict.make_model_config_from_key_val_dict">make_model_config_from_key_val_dict() (in module sleap.gui.learning.scopedkeydict)</a>
@@ -2677,7 +2736,11 @@
 </li>
       <li><a href="_autosummary/sleap.nn.tracker.components.html#sleap.nn.tracker.components.Match">Match (class in sleap.nn.tracker.components)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.match_all_peaks">match_all_peaks() (sleap.nn.paf_grouping.PAFScorer method)</a>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.match_candidates">match_candidates() (sleap.nn.paf_grouping.PAFScorer method)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.match_candidates_batch">match_candidates_batch() (in module sleap.nn.paf_grouping)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.match_candidates_sample">match_candidates_sample() (in module sleap.nn.paf_grouping)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.tracker.kalman.html#sleap.nn.tracker.kalman.match_dict_from_match_function">match_dict_from_match_function() (in module sleap.nn.tracker.kalman)</a>
 </li>
@@ -2688,12 +2751,6 @@
       <li><a href="_autosummary/sleap.info.metrics.html#sleap.info.metrics.match_instance_lists_nodewise">match_instance_lists_nodewise() (in module sleap.info.metrics)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.evals.html#sleap.nn.evals.match_instances">match_instances() (in module sleap.nn.evals)</a>
-
-      <ul>
-        <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.match_instances">(sleap.nn.paf_grouping.PAFScorer method)</a>
-</li>
-      </ul></li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.match_with_pafs">match_with_pafs() (sleap.nn.paf_grouping.PAFScorer method)</a>
 </li>
       <li><a href="_autosummary/sleap.info.metrics.html#sleap.info.metrics.matched_instance_distances">matched_instance_distances() (in module sleap.info.metrics)</a>
 </li>
@@ -2723,7 +2780,7 @@
 </li>
       <li><a href="_autosummary/sleap.nn.callbacks.html#sleap.nn.callbacks.MatplotlibSaver">MatplotlibSaver (class in sleap.nn.callbacks)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.max_edge_length">max_edge_length (sleap.nn.paf_grouping.PAFScorer attribute)</a>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.max_edge_length_ratio">max_edge_length_ratio (sleap.nn.paf_grouping.PAFScorer attribute)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.config.optimization.html#sleap.nn.config.optimization.HardKeypointMiningConfig.max_hard_keypoints">max_hard_keypoints (sleap.nn.config.optimization.HardKeypointMiningConfig attribute)</a>
 
@@ -2744,6 +2801,8 @@
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.EncoderDecoder.maximum_stride">maximum_stride() (sleap.nn.architectures.encoder_decoder.EncoderDecoder property)</a>
 
       <ul>
+        <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.maximum_stride">(sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder property)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNetv1.maximum_stride">(sleap.nn.architectures.resnet.ResNetv1 property)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.model.html#sleap.nn.model.Model.maximum_stride">(sleap.nn.model.Model property)</a>
@@ -2784,8 +2843,6 @@
 </li>
       </ul></li>
       <li><a href="_autosummary/sleap.nn.config.optimization.html#sleap.nn.config.optimization.OptimizationConfig.min_batches_per_epoch">min_batches_per_epoch (sleap.nn.config.optimization.OptimizationConfig attribute)</a>
-</li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.min_edge_score">min_edge_score (sleap.nn.paf_grouping.PAFScorer attribute)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.config.optimization.html#sleap.nn.config.optimization.HardKeypointMiningConfig.min_hard_keypoints">min_hard_keypoints (sleap.nn.config.optimization.HardKeypointMiningConfig attribute)</a>
 
@@ -2973,6 +3030,8 @@
 </li>
         <li><a href="_autosummary/sleap.nn.architectures.leap.html#module-sleap.nn.architectures.leap">sleap.nn.architectures.leap</a>
 </li>
+        <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#module-sleap.nn.architectures.pretrained_encoders">sleap.nn.architectures.pretrained_encoders</a>
+</li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#module-sleap.nn.architectures.resnet">sleap.nn.architectures.resnet</a>
 </li>
         <li><a href="_autosummary/sleap.nn.architectures.unet.html#module-sleap.nn.architectures.unet">sleap.nn.architectures.unet</a>
@@ -3128,6 +3187,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/sleap.nn.architectures.hrnet.html#sleap.nn.architectures.hrnet.HigherHRNet.n_deconv_modules">n_deconv_modules (sleap.nn.architectures.hrnet.HigherHRNet attribute)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.n_edges">n_edges (sleap.nn.paf_grouping.PAFScorer attribute)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.n_nodes">n_nodes (sleap.nn.paf_grouping.PAFScorer attribute)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.n_points">n_points (sleap.nn.paf_grouping.PAFScorer attribute)</a>
 </li>
       <li><a href="_autosummary/sleap.instance.html#sleap.instance.Instance.n_visible_points">n_visible_points() (sleap.instance.Instance property)</a>
@@ -3170,10 +3233,10 @@
 </li>
       <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.CommandContext.newEdge">newEdge() (sleap.gui.commands.CommandContext method)</a>
 </li>
-      <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.CommandContext.newInstance">newInstance() (sleap.gui.commands.CommandContext method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.CommandContext.newInstance">newInstance() (sleap.gui.commands.CommandContext method)</a>
+</li>
       <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.NewNode">NewNode (class in sleap.gui.commands)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.CommandContext.newNode">newNode() (sleap.gui.commands.CommandContext method)</a>
@@ -3348,6 +3411,8 @@
 </li>
       <li><a href="_autosummary/sleap.nn.architectures.hourglass.html#sleap.nn.architectures.hourglass.StemBlock.output_filters">output_filters (sleap.nn.architectures.hourglass.StemBlock attribute)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.LambdaMap.output_key_names">output_key_names (sleap.nn.data.general.LambdaMap attribute)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.output_keys">output_keys() (sleap.nn.data.augmentation.ImgaugAugmenter property)</a>
 
       <ul>
@@ -3378,6 +3443,8 @@
         <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.KeyFilter.output_keys">(sleap.nn.data.general.KeyFilter property)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.KeyRenamer.output_keys">(sleap.nn.data.general.KeyRenamer property)</a>
+</li>
+        <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.LambdaMap.output_keys">(sleap.nn.data.general.LambdaMap property)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.data.inference.html#sleap.nn.data.inference.PredictedCenterInstanceNormalizer.output_keys">(sleap.nn.data.inference.PredictedCenterInstanceNormalizer property)</a>
 </li>
@@ -3433,6 +3500,8 @@
 </li>
         <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.PartAffinityFieldsHeadConfig.output_stride">(sleap.nn.config.model.PartAffinityFieldsHeadConfig attribute)</a>
 </li>
+        <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.PretrainedEncoderConfig.output_stride">(sleap.nn.config.model.PretrainedEncoderConfig attribute)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.ResNetConfig.output_stride">(sleap.nn.config.model.ResNetConfig attribute)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.SingleInstanceConfmapsHeadConfig.output_stride">(sleap.nn.config.model.SingleInstanceConfmapsHeadConfig attribute)</a>
@@ -3457,6 +3526,8 @@
       <li><a href="_autosummary/sleap.nn.architectures.encoder_decoder.html#sleap.nn.architectures.encoder_decoder.EncoderDecoder.output_stride">output_stride() (sleap.nn.architectures.encoder_decoder.EncoderDecoder property)</a>
 
       <ul>
+        <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.output_stride">(sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder property)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNetv1.output_stride">(sleap.nn.architectures.resnet.ResNetv1 property)</a>
 </li>
       </ul></li>
@@ -3614,14 +3685,14 @@
       </ul></li>
       <li><a href="_autosummary/sleap.nn.viz.html#sleap.nn.viz.plot_confmaps">plot_confmaps() (in module sleap.nn.viz)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/sleap.nn.callbacks.html#sleap.nn.callbacks.MatplotlibSaver.plot_fn">plot_fn (sleap.nn.callbacks.MatplotlibSaver attribute)</a>
 
       <ul>
         <li><a href="_autosummary/sleap.nn.callbacks.html#sleap.nn.callbacks.TensorBoardMatplotlibWriter.plot_fn">(sleap.nn.callbacks.TensorBoardMatplotlibWriter attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/sleap.nn.viz.html#sleap.nn.viz.plot_img">plot_img() (in module sleap.nn.viz)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.viz.html#sleap.nn.viz.plot_instance">plot_instance() (in module sleap.nn.viz)</a>
@@ -3685,7 +3756,11 @@
       <li><a href="_autosummary/sleap.nn.architectures.unet.html#sleap.nn.architectures.unet.PoolingBlock">PoolingBlock (class in sleap.nn.architectures.unet)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.inference.html#sleap.nn.inference.InferenceModel.predict">predict() (sleap.nn.inference.InferenceModel method)</a>
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.predict">(sleap.nn.paf_grouping.PAFScorer method)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/sleap.gui.learning.runners.html#sleap.gui.learning.runners.InferenceTask.predict_subprocess">predict_subprocess() (sleap.gui.learning.runners.InferenceTask method)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.widgets.video.html#sleap.gui.widgets.video.GraphicsView.predicted_instances">predicted_instances() (sleap.gui.widgets.video.GraphicsView property)</a>
@@ -3730,16 +3805,22 @@
 </li>
       <li><a href="_autosummary/sleap.nn.config.data.html#sleap.nn.config.data.PreprocessingConfig">PreprocessingConfig (class in sleap.nn.config.data)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNet101.pretrained">pretrained (sleap.nn.architectures.resnet.ResNet101 attribute)</a>
+      <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.pretrained">pretrained (sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder attribute)</a>
 
       <ul>
+        <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNet101.pretrained">(sleap.nn.architectures.resnet.ResNet101 attribute)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNet152.pretrained">(sleap.nn.architectures.resnet.ResNet152 attribute)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNet50.pretrained">(sleap.nn.architectures.resnet.ResNet50 attribute)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.ResNetv1.pretrained">(sleap.nn.architectures.resnet.ResNetv1 attribute)</a>
 </li>
+        <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.PretrainedEncoderConfig.pretrained">(sleap.nn.config.model.PretrainedEncoderConfig attribute)</a>
+</li>
       </ul></li>
+      <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.PretrainedEncoderConfig">PretrainedEncoderConfig (class in sleap.nn.config.model)</a>
+</li>
       <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.CommandContext.previousLabeledFrame">previousLabeledFrame() (sleap.gui.commands.CommandContext method)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.commands.html#sleap.gui.commands.CommandContext.prevSuggestedFrame">prevSuggestedFrame() (sleap.gui.commands.CommandContext method)</a>
@@ -4070,8 +4151,6 @@
 </li>
       <li><a href="_autosummary/sleap.info.feature_suggestions.html#sleap.info.feature_suggestions.FrameGroupSet.sample">sample() (sleap.info.feature_suggestions.FrameGroupSet method)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.sample_edge_line">sample_edge_line() (sleap.nn.paf_grouping.PAFScorer method)</a>
-</li>
       <li><a href="_autosummary/sleap.info.feature_suggestions.html#sleap.info.feature_suggestions.ItemStack.sample_groups">sample_groups() (sleap.info.feature_suggestions.ItemStack method)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.training.html#sleap.nn.training.sanitize_scope_name">sanitize_scope_name() (in module sleap.nn.training)</a>
@@ -4152,11 +4231,13 @@
 </li>
       <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.EdgeConnection.score">score (sleap.nn.paf_grouping.EdgeConnection attribute)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.score_and_match_edge">score_and_match_edge() (sleap.nn.paf_grouping.PAFScorer method)</a>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.score_paf_lines">score_paf_lines() (in module sleap.nn.paf_grouping)</a>
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.score_paf_lines">(sleap.nn.paf_grouping.PAFScorer method)</a>
 </li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.score_edge">score_edge() (sleap.nn.paf_grouping.PAFScorer method)</a>
-</li>
-      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.PAFScorer.score_pair">score_pair() (sleap.nn.paf_grouping.PAFScorer method)</a>
+      </ul></li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.score_paf_lines_batch">score_paf_lines_batch() (in module sleap.nn.paf_grouping)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.learning.configs.html#sleap.gui.learning.configs.TrainingConfigsGetter.search_depth">search_depth (sleap.gui.learning.configs.TrainingConfigsGetter attribute)</a>
 </li>
@@ -4630,8 +4711,6 @@
         <li><a href="_autosummary/sleap.gui.overlays.pafs.html#module-sleap.gui.overlays.pafs">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     sleap.gui.overlays.tracks
 
@@ -4639,6 +4718,8 @@
         <li><a href="_autosummary/sleap.gui.overlays.tracks.html#module-sleap.gui.overlays.tracks">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     sleap.gui.release_checker
 
@@ -4938,6 +5019,13 @@
 
       <ul>
         <li><a href="_autosummary/sleap.nn.architectures.leap.html#module-sleap.nn.architectures.leap">module</a>
+</li>
+      </ul></li>
+      <li>
+    sleap.nn.architectures.pretrained_encoders
+
+      <ul>
+        <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#module-sleap.nn.architectures.pretrained_encoders">module</a>
 </li>
       </ul></li>
       <li>
@@ -5397,6 +5485,8 @@
 </li>
       <li><a href="_autosummary/sleap.gui.dialogs.formbuilder.html#sleap.gui.dialogs.formbuilder.TextOrListWidget">TextOrListWidget (class in sleap.gui.dialogs.formbuilder)</a>
 </li>
+      <li><a href="_autosummary/sleap.nn.paf_grouping.html#sleap.nn.paf_grouping.tf_linear_sum_assignment">tf_linear_sum_assignment() (in module sleap.nn.paf_grouping)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.architectures.resnet.html#sleap.nn.architectures.resnet.tile_channels">tile_channels() (in module sleap.nn.architectures.resnet)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.learning.configs.html#sleap.gui.learning.configs.ConfigFileInfo.timestamp">timestamp() (sleap.gui.learning.configs.ConfigFileInfo property)</a>
@@ -5542,6 +5632,8 @@
 </li>
         <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.KeyRenamer.transform_dataset">(sleap.nn.data.general.KeyRenamer method)</a>
 </li>
+        <li><a href="_autosummary/sleap.nn.data.general.html#sleap.nn.data.general.LambdaMap.transform_dataset">(sleap.nn.data.general.LambdaMap method)</a>
+</li>
         <li><a href="_autosummary/sleap.nn.data.inference.html#sleap.nn.data.inference.PredictedCenterInstanceNormalizer.transform_dataset">(sleap.nn.data.inference.PredictedCenterInstanceNormalizer method)</a>
 </li>
         <li><a href="_autosummary/sleap.nn.data.instance_centroids.html#sleap.nn.data.instance_centroids.InstanceCentroidFinder.transform_dataset">(sleap.nn.data.instance_centroids.InstanceCentroidFinder method)</a>
@@ -5617,6 +5709,8 @@
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/sleap.nn.data.instance_cropping.html#sleap.nn.data.instance_cropping.InstanceCropper.unbatch">unbatch (sleap.nn.data.instance_cropping.InstanceCropper attribute)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.data.dataset_ops.html#sleap.nn.data.dataset_ops.Unbatcher">Unbatcher (class in sleap.nn.data.dataset_ops)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.architectures.unet.html#sleap.nn.architectures.unet.UNet">UNet (class in sleap.nn.architectures.unet)</a>
@@ -5624,6 +5718,8 @@
       <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.BackboneConfig.unet">unet (sleap.nn.config.model.BackboneConfig attribute)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.config.model.html#sleap.nn.config.model.UNetConfig">UNetConfig (class in sleap.nn.config.model)</a>
+</li>
+      <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder">UnetPretrainedEncoder (class in sleap.nn.architectures.pretrained_encoders)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.config.optimization.html#sleap.nn.config.optimization.AugmentationConfig.uniform_noise">uniform_noise (sleap.nn.config.optimization.AugmentationConfig attribute)</a>
 </li>
@@ -5655,6 +5751,8 @@
         <li><a href="_autosummary/sleap.nn.architectures.unet.html#sleap.nn.architectures.unet.UNet.up_blocks">(sleap.nn.architectures.unet.UNet attribute)</a>
 </li>
       </ul></li>
+      <li><a href="_autosummary/sleap.nn.architectures.pretrained_encoders.html#sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder.up_blocks">up_blocks() (sleap.nn.architectures.pretrained_encoders.UnetPretrainedEncoder property)</a>
+</li>
       <li><a href="_autosummary/sleap.nn.architectures.leap.html#sleap.nn.architectures.leap.LeapCNN.up_convs_per_block">up_convs_per_block (sleap.nn.architectures.leap.LeapCNN attribute)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.architectures.leap.html#sleap.nn.architectures.leap.LeapCNN.up_interpolate">up_interpolate (sleap.nn.architectures.leap.LeapCNN attribute)</a>
@@ -5679,12 +5777,12 @@
 </li>
       <li><a href="_autosummary/sleap.io.dataset.html#sleap.io.dataset.LabelsDataCache.update_counts_for_frame">update_counts_for_frame() (sleap.io.dataset.LabelsDataCache method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/sleap.gui.dialogs.formbuilder.html#sleap.gui.dialogs.formbuilder.FormBuilderLayout.update_field_options">update_field_options() (sleap.gui.dialogs.formbuilder.FormBuilderLayout method)</a>
 </li>
       <li><a href="_autosummary/sleap.nn.losses.html#sleap.nn.losses.PartLoss.update_state">update_state() (sleap.nn.losses.PartLoss method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/sleap.gui.dialogs.importvideos.html#sleap.gui.dialogs.importvideos.ImportItemWidget.update_video">update_video() (sleap.gui.dialogs.importvideos.ImportItemWidget method)</a>
 </li>
       <li><a href="_autosummary/sleap.gui.widgets.video.html#sleap.gui.widgets.video.QtInstance.updateBox">updateBox() (sleap.gui.widgets.video.QtInstance method)</a>
@@ -5989,7 +6087,7 @@
       &copy;2019–2020, Murthy Lab @ Princeton.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>

@@ -12,7 +12,6 @@
     <script src="../../../../_static/jquery.js"></script>
     <script src="../../../../_static/underscore.js"></script>
     <script src="../../../../_static/doctools.js"></script>
-    <script src="../../../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
    
@@ -62,19 +61,35 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        augmenter: An instance of `imgaug.augmenters.Sequential` that will be applied to</span>
 <span class="sd">            each element of the input dataset.</span>
+<span class="sd">        image_key: Name of the example key where the image is stored. Defaults to</span>
+<span class="sd">            &quot;image&quot;.</span>
+<span class="sd">        instances_key: Name of the example key where the instance points are stored.</span>
+<span class="sd">            Defaults to &quot;instances&quot;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span>
+    <span class="n">image_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span>
+    <span class="n">instances_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;instances&quot;</span>
 
 <div class="viewcode-block" id="ImgaugAugmenter.from_config"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.from_config">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">AugmentationConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ImgaugAugmenter&quot;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">AugmentationConfig</span><span class="p">,</span>
+        <span class="n">image_key</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span>
+        <span class="n">instances_key</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;instances&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ImgaugAugmenter&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Create an augmenter from a set of configuration parameters.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config: An `AugmentationConfig` instance with the desired parameters.</span>
+<span class="sd">            image_key: Name of the example key where the image is stored. Defaults to</span>
+<span class="sd">                &quot;image&quot;.</span>
+<span class="sd">            instances_key: Name of the example key where the instance points are stored.</span>
+<span class="sd">                Defaults to &quot;instances&quot;.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            An instance of this class with the specified augmentation configuration.</span>
+<span class="sd">            An instance of `ImgaugAugmenter` with the specified augmentation</span>
+<span class="sd">            configuration.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">aug_stack</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">rotate</span><span class="p">:</span>
@@ -117,12 +132,16 @@
                 <span class="n">iaa</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">brightness_min_val</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">brightness_max_val</span><span class="p">))</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">augmenter</span><span class="o">=</span><span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aug_stack</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">augmenter</span><span class="o">=</span><span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aug_stack</span><span class="p">),</span>
+            <span class="n">image_key</span><span class="o">=</span><span class="n">image_key</span><span class="p">,</span>
+            <span class="n">instances_key</span><span class="o">=</span><span class="n">instances_key</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">input_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Text</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Return the keys that incoming elements are expected to have.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;instances&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instances_key</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">output_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Text</span><span class="p">]:</span>
@@ -202,9 +221,10 @@
 <span class="sd">    applied.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        augmenter: An instance of `imgaug.augmenters.Sequential` that will be applied to</span>
-<span class="sd">            each element of the input dataset.</span>
+<span class="sd">        crop_height: The height of the cropped region in pixels.</span>
+<span class="sd">        crop_width: The width of the cropped region in pixels.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">crop_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
     <span class="n">crop_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
 
@@ -230,6 +250,7 @@
 <span class="sd">            Additionally, the `&quot;crop_bbox&quot;` key will contain the bounding box of the</span>
 <span class="sd">            crop in the form `[y1, x1, y2, x2]`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">def</span> <span class="nf">random_crop</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Apply random crop to an example.&quot;&quot;&quot;</span>
             <span class="c1"># Generate random value for the top-left of the crop.</span>
@@ -322,7 +343,7 @@
       &copy;2019–2020, Murthy Lab @ Princeton.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>

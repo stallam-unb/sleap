@@ -12,7 +12,6 @@
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -72,7 +71,7 @@
     <span class="n">KeyRenamer</span><span class="p">,</span>
     <span class="n">KeyDeviceMover</span><span class="p">,</span>
     <span class="n">PredictedCenterInstanceNormalizer</span><span class="p">,</span>
-    <span class="n">PartAffinityFieldInstanceGrouper</span><span class="p">,</span>
+    <span class="c1"># PartAffinityFieldInstanceGrouper,</span>
     <span class="n">PointsRescaler</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -1121,7 +1120,7 @@
     <span class="n">centroid_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Model</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="n">confmap_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TrainingJobConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="n">confmap_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Model</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-    <span class="n">topdown_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TopDownModel</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">inference_model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TopDownModel</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="n">pipeline</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Pipeline</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">tracker</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tracker</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
@@ -1129,7 +1128,7 @@
     <span class="n">integral_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">integral_patch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
 
-    <span class="k">def</span> <span class="nf">_initialize_topdown_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_initialize_inference_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Build the `TopDownModel` for this class from the config/models available.&quot;&quot;&quot;</span>
         <span class="n">use_gt_centroid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">centroid_config</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="n">use_gt_confmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confmap_config</span> <span class="ow">is</span> <span class="kc">None</span>
@@ -1168,7 +1167,7 @@
                 <span class="n">return_confmaps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">topdown_model</span> <span class="o">=</span> <span class="n">TopDownModel</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inference_model</span> <span class="o">=</span> <span class="n">TopDownModel</span><span class="p">(</span>
             <span class="n">centroid_crop</span><span class="o">=</span><span class="n">centroid_crop_layer</span><span class="p">,</span> <span class="n">instance_peaks</span><span class="o">=</span><span class="n">instance_peaks_layer</span>
         <span class="p">)</span>
 
@@ -1233,7 +1232,7 @@
             <span class="n">integral_refinement</span><span class="o">=</span><span class="n">integral_refinement</span><span class="p">,</span>
             <span class="n">integral_patch_size</span><span class="o">=</span><span class="n">integral_patch_size</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">obj</span><span class="o">.</span><span class="n">_initialize_topdown_model</span><span class="p">()</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_initialize_inference_model</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">obj</span></div>
 
     <span class="k">def</span> <span class="nf">make_pipeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_provider</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Provider</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pipeline</span><span class="p">:</span>
@@ -1272,11 +1271,11 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">providers</span> <span class="o">=</span> <span class="p">[</span><span class="n">data_provider</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">topdown_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_topdown_model</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_inference_model</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">make_dataset</span><span class="p">():</span>
-            <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topdown_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+            <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
 
             <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;instance_peaks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">x</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">preds</span><span class="p">[</span><span class="s2">&quot;instance_peaks&quot;</span><span class="p">],</span> <span class="n">preds</span><span class="p">[</span><span class="s2">&quot;n_valid&quot;</span><span class="p">])</span>
@@ -1354,8 +1353,6 @@
         <span class="n">make_instances</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">make_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="n">t0_gen</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_provider</span><span class="p">,</span> <span class="n">sleap</span><span class="o">.</span><span class="n">Labels</span><span class="p">):</span>
             <span class="n">data_provider</span> <span class="o">=</span> <span class="n">LabelsReader</span><span class="p">(</span><span class="n">data_provider</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_provider</span><span class="p">,</span> <span class="n">sleap</span><span class="o">.</span><span class="n">Video</span><span class="p">):</span>
@@ -1365,10 +1362,6 @@
 
         <span class="k">if</span> <span class="n">make_instances</span> <span class="ow">or</span> <span class="n">make_labels</span><span class="p">:</span>
             <span class="n">lfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_labeled_frames_from_generator</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span> <span class="n">data_provider</span><span class="p">)</span>
-            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0_gen</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Predicted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lfs</span><span class="p">)</span><span class="si">}</span><span class="s2"> labeled frames in </span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> secs [</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lfs</span><span class="p">)</span><span class="o">/</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> FPS]&quot;</span>
-            <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">make_labels</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">sleap</span><span class="o">.</span><span class="n">Labels</span><span class="p">(</span><span class="n">lfs</span><span class="p">)</span>
@@ -1377,10 +1370,6 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">examples</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span>
-            <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0_gen</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Predicted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span><span class="si">}</span><span class="s2"> examples in </span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> secs [</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span><span class="o">/</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> examples/s]&quot;</span>
-            <span class="p">)</span>
 
             <span class="k">return</span> <span class="n">examples</span></div>
 
@@ -1460,30 +1449,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">return_confmaps</span> <span class="o">=</span> <span class="n">return_confmaps</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">return_pafs</span> <span class="o">=</span> <span class="n">return_pafs</span>
 
-<div class="viewcode-block" id="BottomUpInferenceLayer.call"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.BottomUpInferenceLayer.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Predict instances for one batch of images.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            example: This may be either a single batch of images as a 4-D tensor of</span>
-<span class="sd">                shape `(batch_size, height, width, channels)`, or a dictionary</span>
-<span class="sd">                containing the image batch in the `&quot;images&quot;` key.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            The predicted instances as a dictionary of tensors with keys:</span>
-
-<span class="sd">            `&quot;instance_peaks&quot;: (batch_size, n_instances, n_nodes, 2)`: Instance skeleton</span>
-<span class="sd">                points.</span>
-<span class="sd">            `&quot;instance_peak_vals&quot;: (batch_size, n_instances, n_nodes)`: Confidence</span>
-<span class="sd">                values for the instance skeleton points.</span>
-<span class="sd">            `&quot;instance_scores&quot;: (batch_size, n_instances)`: PAF matching score for each</span>
-<span class="sd">                instance.</span>
-
-<span class="sd">            If `BottomUpInferenceLayer.return_confmaps` is `True`, the predicted</span>
-<span class="sd">            confidence maps will be returned in the `&quot;confmaps&quot;` key.</span>
-
-<span class="sd">            If `BottomUpInferenceLayer.return_pafs` is `True`, the predicted PAFs will</span>
-<span class="sd">            be returned in the `&quot;part_affinity_fields&quot;` key.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">forward_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">imgs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1500,6 +1466,9 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pafs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="n">pafs</span> <span class="o">=</span> <span class="n">pafs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
+        <span class="k">return</span> <span class="n">cms</span><span class="p">,</span> <span class="n">pafs</span>
+
+    <span class="k">def</span> <span class="nf">find_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cms</span><span class="p">):</span>
         <span class="c1"># Find local peaks.</span>
         <span class="p">(</span>
             <span class="n">peaks</span><span class="p">,</span>
@@ -1517,48 +1486,65 @@
         <span class="n">peaks</span> <span class="o">=</span> <span class="n">peaks</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cm_output_stride</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
         <span class="c1"># Group peaks by sample.</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">pafs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">cms</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RaggedTensor</span><span class="o">.</span><span class="n">from_value_rowids</span><span class="p">(</span>
-            <span class="n">peaks</span><span class="p">,</span> <span class="n">peak_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">samples</span>
+            <span class="n">peaks</span><span class="p">,</span> <span class="n">peak_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">n_samples</span>
         <span class="p">)</span>
         <span class="n">peak_vals</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RaggedTensor</span><span class="o">.</span><span class="n">from_value_rowids</span><span class="p">(</span>
-            <span class="n">peak_vals</span><span class="p">,</span> <span class="n">peak_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">samples</span>
+            <span class="n">peak_vals</span><span class="p">,</span> <span class="n">peak_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">n_samples</span>
         <span class="p">)</span>
         <span class="n">peak_channel_inds</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RaggedTensor</span><span class="o">.</span><span class="n">from_value_rowids</span><span class="p">(</span>
-            <span class="n">peak_channel_inds</span><span class="p">,</span> <span class="n">peak_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">samples</span>
+            <span class="n">peak_channel_inds</span><span class="p">,</span> <span class="n">peak_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">n_samples</span>
         <span class="p">)</span>
 
-        <span class="c1"># Group peaks into instances via PAF scoring.</span>
+        <span class="k">return</span> <span class="n">peaks</span><span class="p">,</span> <span class="n">peak_vals</span><span class="p">,</span> <span class="n">peak_channel_inds</span>
+
+<div class="viewcode-block" id="BottomUpInferenceLayer.call"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.BottomUpInferenceLayer.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Predict instances for one batch of images.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: This may be either a single batch of images as a 4-D tensor of shape</span>
+<span class="sd">            `(batch_size, height, width, channels)`, or a dictionary containing the</span>
+<span class="sd">            image batch in the `&quot;images&quot;` key.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The predicted instances as a dictionary of tensors with keys:</span>
+
+<span class="sd">            `&quot;instance_peaks&quot;: (batch_size, n_instances, n_nodes, 2)`: Instance skeleton</span>
+<span class="sd">            points.</span>
+
+<span class="sd">            `&quot;instance_peak_vals&quot;: (batch_size, n_instances, n_nodes)`: Confidence</span>
+<span class="sd">            values for the instance skeleton points.</span>
+
+<span class="sd">            `&quot;instance_scores&quot;: (batch_size, n_instances)`: PAF matching score for each</span>
+<span class="sd">            instance.</span>
+
+<span class="sd">            If `BottomUpInferenceLayer.return_confmaps` is `True`, the predicted</span>
+<span class="sd">            confidence maps will be returned in the `&quot;confmaps&quot;` key.</span>
+
+<span class="sd">            If `BottomUpInferenceLayer.return_pafs` is `True`, the predicted PAFs will</span>
+<span class="sd">            be returned in the `&quot;part_affinity_fields&quot;` key.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cms</span><span class="p">,</span> <span class="n">pafs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_pass</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">peaks</span><span class="p">,</span> <span class="n">peak_vals</span><span class="p">,</span> <span class="n">peak_channel_inds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_peaks</span><span class="p">(</span><span class="n">cms</span><span class="p">)</span>
         <span class="p">(</span>
-            <span class="n">instance_peaks</span><span class="p">,</span>
-            <span class="n">instance_peak_vals</span><span class="p">,</span>
-            <span class="n">instance_scores</span><span class="p">,</span>
-            <span class="n">instance_sample_inds</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">paf_scorer</span><span class="o">.</span><span class="n">group_peaks</span><span class="p">(</span><span class="n">pafs</span><span class="p">,</span> <span class="n">peaks</span><span class="p">,</span> <span class="n">peak_vals</span><span class="p">,</span> <span class="n">peak_channel_inds</span><span class="p">)</span>
+            <span class="n">predicted_instances</span><span class="p">,</span>
+            <span class="n">predicted_peak_scores</span><span class="p">,</span>
+            <span class="n">predicted_instance_scores</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">paf_scorer</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">pafs</span><span class="p">,</span> <span class="n">peaks</span><span class="p">,</span> <span class="n">peak_vals</span><span class="p">,</span> <span class="n">peak_channel_inds</span><span class="p">)</span>
 
         <span class="c1"># Adjust for input scaling.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_scale</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
             <span class="c1"># Note: We add 0.5 here to offset TensorFlow&#39;s weird image resizing. This</span>
             <span class="c1"># may not always(?) be the most correct approach.</span>
             <span class="c1"># See: https://github.com/tensorflow/tensorflow/issues/6720</span>
-            <span class="n">instance_peaks</span> <span class="o">=</span> <span class="p">(</span><span class="n">instance_peaks</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_scale</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
-
-        <span class="c1"># Group instances by sample.</span>
-        <span class="n">instance_peaks</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RaggedTensor</span><span class="o">.</span><span class="n">from_value_rowids</span><span class="p">(</span>
-            <span class="n">instance_peaks</span><span class="p">,</span> <span class="n">instance_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">samples</span>
-        <span class="p">)</span>
-        <span class="n">instance_peak_vals</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RaggedTensor</span><span class="o">.</span><span class="n">from_value_rowids</span><span class="p">(</span>
-            <span class="n">instance_peak_vals</span><span class="p">,</span> <span class="n">instance_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">samples</span>
-        <span class="p">)</span>
-        <span class="n">instance_scores</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">RaggedTensor</span><span class="o">.</span><span class="n">from_value_rowids</span><span class="p">(</span>
-            <span class="n">instance_scores</span><span class="p">,</span> <span class="n">instance_sample_inds</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="n">samples</span>
-        <span class="p">)</span>
+            <span class="n">predicted_instances</span> <span class="o">=</span> <span class="p">(</span><span class="n">predicted_instances</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_scale</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
 
         <span class="c1"># Build outputs and return.</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;instance_peaks&quot;</span><span class="p">:</span> <span class="n">instance_peaks</span><span class="p">,</span>
-            <span class="s2">&quot;instance_peak_vals&quot;</span><span class="p">:</span> <span class="n">instance_peak_vals</span><span class="p">,</span>
-            <span class="s2">&quot;instance_scores&quot;</span><span class="p">:</span> <span class="n">instance_scores</span><span class="p">,</span>
+            <span class="s2">&quot;instance_peaks&quot;</span><span class="p">:</span> <span class="n">predicted_instances</span><span class="p">,</span>
+            <span class="s2">&quot;instance_peak_vals&quot;</span><span class="p">:</span> <span class="n">predicted_peak_scores</span><span class="p">,</span>
+            <span class="s2">&quot;instance_scores&quot;</span><span class="p">:</span> <span class="n">predicted_instance_scores</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_confmaps</span><span class="p">:</span>
             <span class="n">out</span><span class="p">[</span><span class="s2">&quot;confmaps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cms</span>
@@ -1582,6 +1568,10 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bottomup_layer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bottomup_layer</span> <span class="o">=</span> <span class="n">bottomup_layer</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inference_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottomup_layer</span>
 
 <div class="viewcode-block" id="BottomUpInferenceModel.call"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.BottomUpInferenceModel.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">example</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Predict instances for one batch of images.</span>
@@ -1621,8 +1611,10 @@
     <span class="n">tracker</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tracker</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">ib</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">peak_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
-    <span class="n">integral_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">integral_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">integral_patch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">max_edge_length_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">paf_line_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
 
     <span class="k">def</span> <span class="nf">_initialize_inference_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inference_model</span> <span class="o">=</span> <span class="n">BottomUpInferenceModel</span><span class="p">(</span>
@@ -1630,9 +1622,8 @@
                 <span class="n">keras_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bottomup_model</span><span class="o">.</span><span class="n">keras_model</span><span class="p">,</span>
                 <span class="n">paf_scorer</span><span class="o">=</span><span class="n">PAFScorer</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">bottomup_config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">heads</span><span class="o">.</span><span class="n">multi_instance</span><span class="p">,</span>
-                    <span class="n">max_edge_length</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
-                    <span class="n">min_edge_score</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
-                    <span class="n">n_points</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                    <span class="n">max_edge_length_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_edge_length_ratio</span><span class="p">,</span>
+                    <span class="n">n_points</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">paf_line_points</span><span class="p">,</span>
                     <span class="n">min_instance_peaks</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="p">),</span>
                 <span class="n">input_scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bottomup_config</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">preprocessing</span><span class="o">.</span><span class="n">input_scaling</span><span class="p">,</span>
@@ -1648,7 +1639,7 @@
         <span class="n">bottomup_model_path</span><span class="p">:</span> <span class="n">Text</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
         <span class="n">peak_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="n">integral_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">integral_refinement</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">integral_patch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BottomupPredictor&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Create predictor from saved models.&quot;&quot;&quot;</span>
@@ -2230,14 +2221,13 @@
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;You must specify either video_path or labels dataset path.&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="make_predictor_from_paths"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.make_predictor_from_paths">[docs]</a><span class="k">def</span> <span class="nf">make_predictor_from_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Predictor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Builds predictor object from a list of model paths.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">make_predictor_from_models</span><span class="p">(</span><span class="n">find_heads_for_model_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">))</span></div>
+<div class="viewcode-block" id="make_predictor_from_paths"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.make_predictor_from_paths">[docs]</a><span class="k">def</span> <span class="nf">make_predictor_from_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Predictor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Build predictor object from a list of model paths.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">make_predictor_from_models</span><span class="p">(</span><span class="n">find_heads_for_model_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="find_heads_for_model_paths"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.find_heads_for_model_paths">[docs]</a><span class="k">def</span> <span class="nf">find_heads_for_model_paths</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;Given list of models paths, returns dict with path keyed by head name.&quot;&quot;&quot;</span>
-
     <span class="n">trained_model_paths</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2263,6 +2253,7 @@
     <span class="n">trained_model_paths</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
     <span class="n">labels_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">policy_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Predictor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Given dict of paths keyed by head name, returns appropriate predictor.&quot;&quot;&quot;</span>
 
@@ -2273,12 +2264,15 @@
 
     <span class="k">if</span> <span class="s2">&quot;multi_instance&quot;</span> <span class="ow">in</span> <span class="n">trained_model_paths</span><span class="p">:</span>
         <span class="n">predictor</span> <span class="o">=</span> <span class="n">BottomupPredictor</span><span class="o">.</span><span class="n">from_trained_models</span><span class="p">(</span>
-            <span class="n">trained_model_paths</span><span class="p">[</span><span class="s2">&quot;multi_instance&quot;</span><span class="p">],</span> <span class="o">**</span><span class="n">get_relevant_args</span><span class="p">(</span><span class="s2">&quot;bottomup&quot;</span><span class="p">)</span>
+            <span class="n">trained_model_paths</span><span class="p">[</span><span class="s2">&quot;multi_instance&quot;</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">get_relevant_args</span><span class="p">(</span><span class="s2">&quot;bottomup&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="s2">&quot;single_instance&quot;</span> <span class="ow">in</span> <span class="n">trained_model_paths</span><span class="p">:</span>
         <span class="n">predictor</span> <span class="o">=</span> <span class="n">SingleInstancePredictor</span><span class="o">.</span><span class="n">from_trained_models</span><span class="p">(</span>
             <span class="n">confmap_model_path</span><span class="o">=</span><span class="n">trained_model_paths</span><span class="p">[</span><span class="s2">&quot;single_instance&quot;</span><span class="p">],</span>
             <span class="o">**</span><span class="n">get_relevant_args</span><span class="p">(</span><span class="s2">&quot;single&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="p">(</span>
         <span class="s2">&quot;centroid&quot;</span> <span class="ow">in</span> <span class="n">trained_model_paths</span> <span class="ow">and</span> <span class="s2">&quot;centered_instance&quot;</span> <span class="ow">in</span> <span class="n">trained_model_paths</span>
@@ -2287,6 +2281,7 @@
             <span class="n">centroid_model_path</span><span class="o">=</span><span class="n">trained_model_paths</span><span class="p">[</span><span class="s2">&quot;centroid&quot;</span><span class="p">],</span>
             <span class="n">confmap_model_path</span><span class="o">=</span><span class="n">trained_model_paths</span><span class="p">[</span><span class="s2">&quot;centered_instance&quot;</span><span class="p">],</span>
             <span class="o">**</span><span class="n">get_relevant_args</span><span class="p">(</span><span class="s2">&quot;topdown&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">trained_model_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">labels_path</span><span class="p">:</span>
         <span class="n">predictor</span> <span class="o">=</span> <span class="n">MockPredictor</span><span class="o">.</span><span class="n">from_trained_models</span><span class="p">(</span><span class="n">labels_path</span><span class="o">=</span><span class="n">labels_path</span><span class="p">)</span>
@@ -2329,9 +2324,67 @@
     <span class="n">Labels</span><span class="o">.</span><span class="n">save_file</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
 
 
+<div class="viewcode-block" id="load_model"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.load_model">[docs]</a><span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span>
+    <span class="n">model_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">refinement</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;integral&quot;</span><span class="p">,</span>
+    <span class="n">tracker</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">tracker_window</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">tracker_max_instances</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Predictor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Load a trained SLEAP model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model_path: Path to model or list of path to models that were trained by SLEAP.</span>
+<span class="sd">            These should be the directories that contain `training_job.json` and</span>
+<span class="sd">            `best_model.h5`.</span>
+<span class="sd">        batch_size: Number of frames to predict at a time. Larger values result in</span>
+<span class="sd">            faster inference speeds, but require more memory.</span>
+<span class="sd">        refinement: If `&quot;integral&quot;`, peak locations will be refined with integral</span>
+<span class="sd">            regression. If `&quot;local&quot;`, peaks will be refined with quarter pixel local</span>
+<span class="sd">            gradient offset.</span>
+<span class="sd">        tracker: Name of the tracker to use with the inference model. Must be one of</span>
+<span class="sd">            `&quot;simple&quot;` or `&quot;flow&quot;`. If `None`, no identity tracking across frames will</span>
+<span class="sd">            be performed.</span>
+<span class="sd">        tracker_window: Number of frames of history to use when tracking. No effect when</span>
+<span class="sd">            `tracker` is `None`.</span>
+<span class="sd">        tracker_max_instances: If not `None`, discard instances beyond this count when</span>
+<span class="sd">            tracking. No effect when `tracker` is `None`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An instance of a `Predictor` based on which model type was detected.</span>
+
+<span class="sd">        If this is a top-down model, paths to the centroids model as well as the</span>
+<span class="sd">        centered instance model must be provided. A `TopdownPredictor` instance will be</span>
+<span class="sd">        returned.</span>
+
+<span class="sd">        If this is a bottom-up model, a `BottomupPredictor` will be returned.</span>
+
+<span class="sd">        If this is a single-instance model, a `SingleInstancePredictor` will be</span>
+<span class="sd">        returned.</span>
+
+<span class="sd">        If a `tracker` is specified, the predictor will also run identity tracking over</span>
+<span class="sd">        time.</span>
+
+<span class="sd">    See also: TopdownPredictor, BottomupPredictor, SingleInstancePredictor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">model_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">model_path</span><span class="p">]</span>
+    <span class="n">predictor</span> <span class="o">=</span> <span class="n">make_predictor_from_paths</span><span class="p">(</span>
+        <span class="n">model_path</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">integral_refinement</span><span class="o">=</span><span class="n">refinement</span> <span class="o">==</span> <span class="s2">&quot;integral&quot;</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">tracker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">predictor</span><span class="o">.</span><span class="n">tracker</span> <span class="o">=</span> <span class="n">Tracker</span><span class="o">.</span><span class="n">make_tracker_by_name</span><span class="p">(</span>
+            <span class="n">tracker</span><span class="o">=</span><span class="n">tracker</span><span class="p">,</span>
+            <span class="n">track_window</span><span class="o">=</span><span class="n">tracker_window</span><span class="p">,</span>
+            <span class="n">post_connect_single_breaks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">clean_instance_count</span><span class="o">=</span><span class="n">tracker_max_instances</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">predictor</span></div>
+
+
 <div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../_autosummary/sleap.nn.inference.html#sleap.nn.inference.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;CLI for running inference.&quot;&quot;&quot;</span>
-
     <span class="n">parser</span> <span class="o">=</span> <span class="n">make_cli_parser</span><span class="p">()</span>
     <span class="n">args</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
@@ -2393,7 +2446,7 @@
     <span class="n">predicted_frames</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">video_reader</span> <span class="ow">in</span> <span class="n">video_readers</span><span class="p">:</span>
-        <span class="n">video_predicted_frames</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">video_reader</span><span class="p">)</span>
+        <span class="n">video_predicted_frames</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">video_reader</span><span class="p">,</span> <span class="n">make_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">make_instances</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">predicted_frames</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">video_predicted_frames</span><span class="p">)</span>
 
     <span class="c1"># Create dictionary of metadata we want to save with predictions</span>
@@ -2473,7 +2526,7 @@
       &copy;2019–2020, Murthy Lab @ Princeton.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
     </div>
