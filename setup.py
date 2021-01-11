@@ -35,7 +35,7 @@ setup(
     description="SLEAP (Social LEAP Estimates Animal Pose) is a deep learning framework for estimating animal pose.",
     long_description=long_description,
     long_description_content_type="text/x-rst",
-    author="Talmo Pereira, David Turner, Nat Tabris",
+    author="Talmo Pereira, Arie Matsliah, David Turner, Nat Tabris",
     author_email="talmo@princeton.edu",
     project_urls={
         "Documentation": "https://sleap.ai/#sleap",

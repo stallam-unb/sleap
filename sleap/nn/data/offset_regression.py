@@ -26,7 +26,7 @@ def make_offsets(points: tf.Tensor, xv: tf.Tensor, yv: tf.Tensor, stride: int = 
         corresponds to the x- and y-offsets at each grid point for each input point.
 
     See also:
-        sleap.nn.data.utils.make_grid_vectors
+        `sleap.nn.data.utils.make_grid_vectors`
     """
 
     # Vectorize for broadcasting.
@@ -76,7 +76,8 @@ def mask_offsets(
         The offset maps with the same shape as the inputs but with zeros where the
         confidence maps are below the specified threshold.
 
-    See also: make_offsets, sleap.nn.data.confidence_maps.make_confmaps
+    See also:
+        `make_offsets`, `sleap.nn.data.confidence_maps.make_confmaps`
     """
     mask = tf.expand_dims(confmaps > threshold, axis=-1)
     masked = tf.where(mask, offsets, 0.0)
