@@ -9,6 +9,7 @@ import tempfile
 import time
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Text, Tuple
+import json
 
 from PySide2 import QtWidgets
 
@@ -237,11 +238,30 @@ class InferenceTask:
         print(" \\\n".join(cli_args))
         print()
 
-        with sub.Popen(cli_args) as proc:
+        with sub.Popen(cli_args, stdout=sub.PIPE) as proc:
             while proc.poll() is None:
                 if waiting_callback is not None:
+                    line = proc.stdout.readline().rstrip().decode()
+                    n_predicted = None
+                    n_total = None
+                    elapsed = None
+                    if line:
+                        # print(f"line = {line}")
+                        try:
+                            line_data = json.loads(line)
+                            # print(f"line_data = {line_data}")
+                            if "n_predicted" in line_data:
+                                n_predicted = line_data["n_predicted"]
+                            if "n_total" in line_data:
+                                n_total = line_data["n_total"]
+                            if "elapsed" in line_data:
+                                elapsed = line_data["elapsed"]
+                        except:
+                            # print(line)
+                            pass
 
-                    if waiting_callback() == -1:
+                    if waiting_callback(n_predicted, n_total, elapsed) == -1:
+                    # if waiting_callback() == -1:
                         # -1 signals user cancellation
                         return "", False
 
@@ -569,7 +589,8 @@ def run_gui_inference(
     if gui:
         # show message while running inference
         progress = QtWidgets.QProgressDialog(
-            f"Running inference on {len(items_for_inference)} videos...",
+            # f"Running inference on {len(items_for_inference)} videos...",
+            f"Initializing...",
             "Cancel",
             0,
             len(items_for_inference),
@@ -585,10 +606,30 @@ def run_gui_inference(
             if progress.wasCanceled():
                 return -1
 
+    def waiting_progress(n_predicted=None, n_total=None, elapsed=None):
+        if gui:
+            if n_predicted is not None:
+                progress.setValue(n_predicted)
+            if n_total is not None:
+                progress.setMaximum(n_total)
+            if elapsed is not None and n_predicted is not None and n_total is not None:
+                fps = n_predicted / elapsed
+                n_left = n_total - n_predicted
+                if n_left > 0:
+                    eta = n_left / fps
+                    # progress.setLabelText(f"Predicting...\nFPS: {fps:.1f} / ETA: {eta:.1f} seconds")
+                    progress.setLabelText(f"Predicting...\nETA: {eta:.1f} seconds")
+                else:
+                    progress.setLabelText(f"Importing predictions...")
+            QtWidgets.QApplication.instance().processEvents()
+            if progress.wasCanceled():
+                return -1
+
     for i, item_for_inference in enumerate(items_for_inference.items):
         # Run inference for desired frames in this video
         predictions_path, success = inference_task.predict_subprocess(
-            item_for_inference, append_results=True, waiting_callback=lambda: waiting(i)
+            # item_for_inference, append_results=True, waiting_callback=lambda: waiting(i)
+            item_for_inference, append_results=True, waiting_callback=waiting_progress
         )
 
         if not success:

@@ -25,9 +25,10 @@ import attr
 import logging
 import warnings
 import os
-import time
+from time import time
 from abc import ABC, abstractmethod
 from typing import Text, Optional, List, Dict, Union, Iterator
+import json
 
 import tensorflow as tf
 import numpy as np
@@ -74,7 +75,7 @@ def safely_generate(ds: tf.data.Dataset, progress: bool = True):
     ds_iter = iter(ds)
 
     i = 0
-    wall_t0 = time.time()
+    wall_t0 = time()
     done = False
     while not done:
         try:
@@ -93,7 +94,7 @@ def safely_generate(ds: tf.data.Dataset, progress: bool = True):
             # Show the current progress (frames, time, fps)
             if progress:
                 if (i and i % 1000 == 0) or done:
-                    elapsed_time = time.time() - wall_t0
+                    elapsed_time = time() - wall_t0
                     logger.info(
                         f"Finished {i} examples in {elapsed_time:.2f} seconds "
                         "(inference + postprocessing)"
@@ -1788,7 +1789,7 @@ class TopdownPredictor(Predictor):
         return pipeline
 
     def _predict_generator(
-        self, data_provider: Provider
+        self, data_provider: Provider, verbose: bool = True
     ) -> Iterator[Dict[str, np.ndarray]]:
         """Create a generator that yields batches of inference results.
 
@@ -1816,6 +1817,11 @@ class TopdownPredictor(Predictor):
         # Update the data provider source.
         self.pipeline.providers = [data_provider]
 
+        if verbose:
+            n_total = len(data_provider)
+            n_predicted = 0
+            t0 = time()
+
         # Loop over data batches.
         for ex in self.pipeline.make_dataset():
             # Run inference on current batch.
@@ -1840,6 +1846,11 @@ class TopdownPredictor(Predictor):
                 ex["video_ind"] = ex["video_ind"].numpy().flatten()
             if isinstance(ex["frame_ind"], tf.Tensor):
                 ex["frame_ind"] = ex["frame_ind"].numpy().flatten()
+
+            if verbose:
+                elapsed = time() - t0
+                n_predicted += len(ex["instance_peaks"])
+                print(json.dumps({"n_predicted": n_predicted, "n_total": n_total, "elapsed": elapsed}), flush=True)
 
             yield ex
 
@@ -2948,7 +2959,7 @@ def main():
         return
 
     # Run inference!
-    t0 = time.time()
+    t0 = time()
     predicted_frames = []
 
     for video_reader in video_readers:
@@ -2966,7 +2977,7 @@ def main():
     prediction_metadata["sleap.version"] = sleap.__version__
 
     save_predictions_from_cli(args, predicted_frames, prediction_metadata)
-    print(f"Total Time: {time.time() - t0}")
+    print(f"Total Time: {time() - t0}")
 
 
 if __name__ == "__main__":
