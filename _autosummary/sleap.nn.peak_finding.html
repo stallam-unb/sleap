@@ -1,0 +1,608 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sleap.nn.peak_finding &#8212; SLEAP  documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="sleap.nn.system" href="sleap.nn.system.html" />
+    <link rel="prev" title="sleap.nn.paf_grouping" href="sleap.nn.paf_grouping.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-sleap.nn.peak_finding">
+<span id="sleap-nn-peak-finding"></span><h1>sleap.nn.peak_finding<a class="headerlink" href="#module-sleap.nn.peak_finding" title="Permalink to this headline">¶</a></h1>
+<p>This module contains TensorFlow-based peak finding methods.</p>
+<p>In general, the inputs to the functions provided here operate on confidence maps
+(sometimes referred to as heatmaps), which are image-based representations of the
+locations of landmark coordinates.</p>
+<p>In these representations, landmark locations are encoded as probability that it is
+present each pixel. This is often represented by an unnormalized 2D Gaussian PDF
+centered at the true location and evaluated over the entire image grid.</p>
+<p>Peak finding entails finding either the global or local maxima of these confidence maps.</p>
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.crop_bboxes">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">crop_bboxes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">images</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">bboxes</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">sample_inds</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em><span class="sig-paren">)</span> &#x2192; tensorflow.python.framework.ops.Tensor<a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#crop_bboxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.crop_bboxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Crop bounding boxes from a batch of images.</p>
+<p>This method serves as a convenience method for specifying the arguments of
+<cite>tf.image.crop_and_resize</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>images</strong> – Tensor of shape (samples, height, width, channels) of a batch of images.</p></li>
+<li><p><strong>bboxes</strong> – Tensor of shape (n_bboxes, 4) and dtype tf.float32, where the last axis
+corresponds to unnormalized (y1, x1, y2, x2) coordinates of the bounding
+boxes. This can be generated from centroids using <cite>make_centered_bboxes</cite>.</p></li>
+<li><p><strong>sample_inds</strong> – Tensor of shape (n_bboxes,) specifying which samples each bounding
+box should be cropped from.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A tensor of shape (n_bboxes, crop_height, crop_width, channels) of the same
+dtype as the input image. The crop size is inferred from the bounding box
+coordinates.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function expects bounding boxes with coordinates at the centers of the
+pixels in the box limits. Technically, the box will span (x1 - 0.5, x2 + 0.5)
+and (y1 - 0.5, y2 + 0.5).</p>
+<p>For example, a 3x3 patch centered at (1, 1) would be specified by
+(y1, x1, y2, x2) = (0, 0, 2, 2). This would be exactly equivalent to indexing
+the image with <cite>image[0:3, 0:3]</cite>.</p>
+<p>See also: <cite>make_centered_bboxes</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_global_peaks">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_global_peaks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em>, <em class="sig-param"><span class="n">refinement</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">integral_patch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_global_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_global_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find global peaks with optional refinement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Confidence maps. Tensor of shape (samples, height, width, channels).</p></li>
+<li><p><strong>threshold</strong> – Minimum confidence threshold. Peaks with values below this will
+ignored.</p></li>
+<li><p><strong>refinement</strong> – If <cite>None</cite>, returns the grid-aligned peaks with no refinement. If
+<cite>“integral”</cite>, peaks will be refined with integral regression. If <cite>“local”</cite>,
+peaks will be refined with quarter pixel local gradient offset.</p></li>
+<li><p><strong>integral_patch_size</strong> – Size of patches to crop around each rough peak as an
+integer scalar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of (peak_points, peak_vals).</p>
+<p>peak_points: float32 tensor of shape (samples, channels, 2), where the last axis
+indicates peak locations in xy order.</p>
+<p>peak_vals: float32 tensor of shape (samples, channels) containing the values at
+the peak points.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_global_peaks_integral">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_global_peaks_integral</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">crop_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_global_peaks_integral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_global_peaks_integral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find local peaks with integral refinement.</p>
+<p>Integral regression refinement will be computed by taking the weighted average of
+the local neighborhood around each rough peak.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Confidence maps. Tensor of shape (samples, height, width, channels).</p></li>
+<li><p><strong>crop_size</strong> – Size of patches to crop around each rough peak as an integer scalar.</p></li>
+<li><p><strong>threshold</strong> – Minimum confidence threshold. Peaks with values below this will be
+set to NaNs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of (peak_points, peak_vals).</p>
+<p>peak_points: float32 tensor of shape (samples, channels, 2), where the last axis
+indicates peak locations in xy order.</p>
+<p>peak_vals: float32 tensor of shape (samples, channels) containing the values at
+the peak points.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_global_peaks_rough">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_global_peaks_rough</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.1</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_global_peaks_rough"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_global_peaks_rough" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the global maximum for each sample and channel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Tensor of shape (samples, height, width, channels).</p></li>
+<li><p><strong>threshold</strong> – Scalar float specifying the minimum confidence value for peaks. Peaks
+with values below this threshold will be replaced with NaNs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of (peak_points, peak_vals).</p>
+<p>peak_points: float32 tensor of shape (samples, channels, 2), where the last axis
+indicates peak locations in xy order.</p>
+<p>peak_vals: float32 tensor of shape (samples, channels) containing the values at
+the peak points.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_global_peaks_with_offsets">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_global_peaks_with_offsets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">offsets</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_global_peaks_with_offsets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_global_peaks_with_offsets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find global peaks and refine with learned offset maps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Confidence maps tensor of shape <cite>(samples, height, width, channels)</cite>.</p></li>
+<li><p><strong>offsets</strong> – Offset maps tensor of shape <cite>(samples, height, width, 2 * channels)</cite>.</p></li>
+<li><p><strong>threshold</strong> – Scalar float specifying the minimum confidence value for peaks. Peaks
+with values below this threshold will be replaced with NaNs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of <cite>(peak_points, peak_vals)</cite>.</p>
+<p><cite>peak_points</cite>: <cite>float32</cite> tensor of shape <cite>(samples, channels, 2)</cite>, where the
+last axis indicates peak locations in xy order.</p>
+<p><cite>peak_vals</cite>: <cite>float32</cite> tensor of shape <cite>(samples, channels)</cite> containing the
+values at the peak points.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_local_peaks">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_local_peaks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em>, <em class="sig-param"><span class="n">refinement</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">integral_patch_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_local_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_local_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find local peaks with optional refinement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Confidence maps. Tensor of shape (samples, height, width, channels).</p></li>
+<li><p><strong>threshold</strong> – Minimum confidence threshold. Peaks with values below this will
+ignored.</p></li>
+<li><p><strong>refinement</strong> – If <cite>None</cite>, returns the grid-aligned peaks with no refinement. If
+<cite>“integral”</cite>, peaks will be refined with integral regression. If <cite>“local”</cite>,
+peaks will be refined with quarter pixel local gradient offset.</p></li>
+<li><p><strong>integral_patch_size</strong> – Size of patches to crop around each rough peak as an
+integer scalar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of (peak_points, peak_vals, peak_sample_inds, peak_channel_inds).</p>
+<p>peak_points: float32 tensor of shape (n_peaks, 2), where the last axis
+indicates peak locations in xy order.</p>
+<p>peak_vals: float32 tensor of shape (n_peaks,) containing the values at the peak
+points.</p>
+<p>peak_sample_inds: int32 tensor of shape (n_peaks,) containing the indices of the
+sample each peak belongs to.</p>
+<p>peak_channel_inds: int32 tensor of shape (n_peaks,) containing the indices of
+the channel each peak belongs to.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_local_peaks_integral">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_local_peaks_integral</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">crop_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_local_peaks_integral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_local_peaks_integral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find local peaks with integral refinement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Confidence maps. Tensor of shape (samples, height, width, channels).</p></li>
+<li><p><strong>crop_size</strong> – </p></li>
+<li><p><strong>threshold</strong> – Minimum confidence threshold. Peaks with values below this will
+ignored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of (peak_points, peak_vals, peak_sample_inds, peak_channel_inds).</p>
+<p>peak_points: float32 tensor of shape (n_peaks, 2), where the last axis
+indicates peak locations in xy order.</p>
+<p>peak_vals: float32 tensor of shape (n_peaks,) containing the values at the peak
+points.</p>
+<p>peak_sample_inds: int32 tensor of shape (n_peaks,) containing the indices of the
+sample each peak belongs to.</p>
+<p>peak_channel_inds: int32 tensor of shape (n_peaks,) containing the indices of
+the channel each peak belongs to.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_local_peaks_rough">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_local_peaks_rough</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_local_peaks_rough"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_local_peaks_rough" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find local maxima via non-maximum suppresion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Tensor of shape (samples, height, width, channels).</p></li>
+<li><p><strong>threshold</strong> – Scalar float specifying the minimum confidence value for peaks. Peaks
+with values below this threshold will not be returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of (peak_points, peak_vals, peak_sample_inds, peak_channel_inds).
+peak_points: float32 tensor of shape (n_peaks, 2), where the last axis
+indicates peak locations in xy order.</p>
+<p>peak_vals: float32 tensor of shape (n_peaks,) containing the values at the peak
+points.</p>
+<p>peak_sample_inds: int32 tensor of shape (n_peaks,) containing the indices of the
+sample each peak belongs to.</p>
+<p>peak_channel_inds: int32 tensor of shape (n_peaks,) containing the indices of
+the channel each peak belongs to.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_local_peaks_with_offsets">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_local_peaks_with_offsets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">offsets</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.2</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_local_peaks_with_offsets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_local_peaks_with_offsets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find local peaks and refine with learned offset maps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Confidence maps. Tensor of shape <cite>(samples, height, width, channels)</cite>.</p></li>
+<li><p><strong>offsets</strong> – Offset maps tensor of shape <cite>(samples, height, width, 2 * channels)</cite>.</p></li>
+<li><p><strong>threshold</strong> – Minimum confidence threshold. Peaks with values below this will
+ignored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of <cite>(peak_points, peak_vals, peak_sample_inds, peak_channel_inds)</cite>.</p>
+<p><cite>peak_points</cite>: float32 tensor of shape <cite>(n_peaks, 2)</cite>, where the last axis
+indicates peak locations in xy order.</p>
+<p><cite>peak_vals</cite>: float32 tensor of shape <cite>(n_peaks,)</cite> containing the values at the
+peak points.</p>
+<p><cite>peak_sample_inds</cite>: int32 tensor of shape <cite>(n_peaks,)</cite> containing the indices of
+the sample each peak belongs to.</p>
+<p><cite>peak_channel_inds</cite>: int32 tensor of shape <cite>(n_peaks,)</cite> containing the indices
+of the channel each peak belongs to.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.find_offsets_local_direction">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">find_offsets_local_direction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">centered_patches</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">delta</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.25</span></em><span class="sig-paren">)</span> &#x2192; tensorflow.python.framework.ops.Tensor<a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#find_offsets_local_direction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.find_offsets_local_direction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes subpixel offsets from the direction of the pixels around the peak.</p>
+<p>This function finds the delta-offset from the center pixel of peak-centered patches
+by finding the direction of the gradient around each center.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>centered_patches</strong> – A rank-4 tensor of shape (samples, 3, 3, 1) corresponding
+to the centered crops around the grid-anchored peaks. For multi-channel
+images, stack the channels along the samples axis before calling this
+function.</p></li>
+<li><p><strong>delta</strong> – Scalar float that will scaled by the gradient direction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>offsets, a float32 tensor of shape (samples, 2) where the columns correspond to
+the offsets relative to the center pixel for the x and y directions
+respectively, i.e., for the i-th sample:</p>
+<blockquote>
+<div><p>dx_i, dy_i = offsets[i]</p>
+</div></blockquote>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For symmetric patches, the offset will be 0.</p>
+<dl class="simple">
+<dt>This function can be used to refine peak coordinates by:</dt><dd><ol class="arabic simple">
+<li><p>Cropping 3 x 3 patches around each peak.</p></li>
+<li><p>Stacking patches along the samples axis.</p></li>
+<li><p>Computing the local gradient around each centered patch.</p></li>
+<li><p>Applying subpixel offsets to each peak.</p></li>
+</ol>
+</dd>
+</dl>
+<p>This is a commonly used algorithm for subpixel peak refinement, described for
+pose estimation applications in [1].</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">find_offsets_local_direction</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span>
+<span class="gp">... </span>     <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mf">0.25</span><span class="p">)</span>
+<span class="go">&lt;tf.Tensor: shape=(1, 2), dtype=float64, numpy=array([[0.25, 0.  ]])&gt;</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id1"><span class="brackets">1</span></dt>
+<dd><p>Alejandro Newell, Kaiyu Yang, and Jia Deng. Stacked Hourglass Networks
+for Human Pose Estimation. In _European conference on computer <a href="#id2"><span class="problematic" id="id3">vision_</span></a>, 2016.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.integral_regression">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">integral_regression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cms</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">xv</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">yv</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#integral_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.integral_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute regression by integrating over the confidence maps on a grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cms</strong> – Confidence maps with shape (samples, height, width, channels).</p></li>
+<li><p><strong>xv</strong> – X grid vector tf.float32 of grid coordinates to sample.</p></li>
+<li><p><strong>yv</strong> – Y grid vector tf.float32 of grid coordinates to sample.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of (x_hat, y_hat) with the regressed x- and y-coordinates for each
+channel of the confidence maps.</p>
+<p>x_hat and y_hat are of shape (samples, channels)</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.make_gaussian_kernel">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">make_gaussian_kernel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">sigma</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span> &#x2192; tensorflow.python.framework.ops.Tensor<a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#make_gaussian_kernel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.make_gaussian_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a square unnormalized 2D symmetric Gaussian kernel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> – Length of kernel. This should be an odd integer.</p></li>
+<li><p><strong>sigma</strong> – Standard deviation of the Gaussian specified as a scalar float.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kernel, a float32 tensor of shape (size, size) with values corresponding to the
+unnormalized probability density of a 2D Gaussian distribution with symmetric
+covariance along the x and y directions.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The maximum value of this kernel will be 1.0. To normalize it, divide each
+element by (2 * np.pi * sigma ** 2).</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.peak_finding.smooth_imgs">
+<code class="sig-prename descclassname">sleap.nn.peak_finding.</code><code class="sig-name descname">smooth_imgs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imgs</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">kernel_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em>, <em class="sig-param"><span class="n">sigma</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">1.0</span></em><span class="sig-paren">)</span> &#x2192; tensorflow.python.framework.ops.Tensor<a class="reference internal" href="../_modules/sleap/nn/peak_finding.html#smooth_imgs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.peak_finding.smooth_imgs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Smooths the input image by convolving it with a Gaussian kernel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>imgs</strong> – A rank-4 tensor of shape (samples, height, width, channels).</p></li>
+<li><p><strong>kernel_size</strong> – An odd-valued scalar integer specifying the width and height of
+the Gaussian kernel.</p></li>
+<li><p><strong>sigma</strong> – Standard deviation of the Gaussian specified as a scalar float.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A tensor of the same shape as imgs after convolving with a Gaussian sample and
+channelwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">SLEAP</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/reference.html">Feature Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="sleap.diagnostic.html">sleap.diagnostic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.instance.html">sleap.instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.message.html">sleap.message</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.prefs.html">sleap.prefs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.rangelist.html">sleap.rangelist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.skeleton.html">sleap.skeleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.util.html">sleap.util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.version.html">sleap.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.color.html">sleap.gui.color</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.commands.html">sleap.gui.commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dataviews.html">sleap.gui.dataviews</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.release_checker.html">sleap.gui.release_checker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.shortcuts.html">sleap.gui.shortcuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.state.html">sleap.gui.state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.suggestions.html">sleap.gui.suggestions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.anchors.html">sleap.gui.overlays.anchors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.base.html">sleap.gui.overlays.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.confmaps.html">sleap.gui.overlays.confmaps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.instance.html">sleap.gui.overlays.instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.pafs.html">sleap.gui.overlays.pafs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.tracks.html">sleap.gui.overlays.tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.configs.html">sleap.gui.learning.configs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.datagen.html">sleap.gui.learning.datagen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.dialog.html">sleap.gui.learning.dialog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.receptivefield.html">sleap.gui.learning.receptivefield</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.runners.html">sleap.gui.learning.runners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.scopedkeydict.html">sleap.gui.learning.scopedkeydict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.delete.html">sleap.gui.dialogs.delete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.export_clip.html">sleap.gui.dialogs.export_clip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.filedialog.html">sleap.gui.dialogs.filedialog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.formbuilder.html">sleap.gui.dialogs.formbuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.importvideos.html">sleap.gui.dialogs.importvideos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.merge.html">sleap.gui.dialogs.merge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.message.html">sleap.gui.dialogs.message</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.missingfiles.html">sleap.gui.dialogs.missingfiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.shortcuts.html">sleap.gui.dialogs.shortcuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.imagedir.html">sleap.gui.widgets.imagedir</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.multicheck.html">sleap.gui.widgets.multicheck</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.slider.html">sleap.gui.widgets.slider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.video.html">sleap.gui.widgets.video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.align.html">sleap.info.align</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.feature_suggestions.html">sleap.info.feature_suggestions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.labels.html">sleap.info.labels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.metrics.html">sleap.info.metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.summary.html">sleap.info.summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.trackcleaner.html">sleap.info.trackcleaner</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.write_tracking_h5.html">sleap.info.write_tracking_h5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.asyncvideo.html">sleap.io.asyncvideo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.convert.html">sleap.io.convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.dataset.html">sleap.io.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.legacy.html">sleap.io.legacy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.pathutils.html">sleap.io.pathutils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.video.html">sleap.io.video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.videowriter.html">sleap.io.videowriter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.visuals.html">sleap.io.visuals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.adaptor.html">sleap.io.format.adaptor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.coco.html">sleap.io.format.coco</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.deeplabcut.html">sleap.io.format.deeplabcut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.deepposekit.html">sleap.io.format.deepposekit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.dispatch.html">sleap.io.format.dispatch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.filehandle.html">sleap.io.format.filehandle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.genericjson.html">sleap.io.format.genericjson</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.hdf5.html">sleap.io.format.hdf5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.labels_json.html">sleap.io.format.labels_json</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.leap_matlab.html">sleap.io.format.leap_matlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.main.html">sleap.io.format.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.sleap_analysis.html">sleap.io.format.sleap_analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.text.html">sleap.io.format.text</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.callbacks.html">sleap.nn.callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.evals.html">sleap.nn.evals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.heads.html">sleap.nn.heads</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.inference.html">sleap.nn.inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.losses.html">sleap.nn.losses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.model.html">sleap.nn.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.monitor.html">sleap.nn.monitor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.paf_grouping.html">sleap.nn.paf_grouping</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">sleap.nn.peak_finding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.system.html">sleap.nn.system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.tracking.html">sleap.nn.tracking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.training.html">sleap.nn.training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.utils.html">sleap.nn.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.viz.html">sleap.nn.viz</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.data.html">sleap.nn.config.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.model.html">sleap.nn.config.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.optimization.html">sleap.nn.config.optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.outputs.html">sleap.nn.config.outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.training_job.html">sleap.nn.config.training_job</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.utils.html">sleap.nn.config.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.common.html">sleap.nn.architectures.common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.encoder_decoder.html">sleap.nn.architectures.encoder_decoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.hourglass.html">sleap.nn.architectures.hourglass</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.hrnet.html">sleap.nn.architectures.hrnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.leap.html">sleap.nn.architectures.leap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.pretrained_encoders.html">sleap.nn.architectures.pretrained_encoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.resnet.html">sleap.nn.architectures.resnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.unet.html">sleap.nn.architectures.unet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.upsampling.html">sleap.nn.architectures.upsampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.tracker.components.html">sleap.nn.tracker.components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.tracker.kalman.html">sleap.nn.tracker.kalman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.augmentation.html">sleap.nn.data.augmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.confidence_maps.html">sleap.nn.data.confidence_maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.dataset_ops.html">sleap.nn.data.dataset_ops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.edge_maps.html">sleap.nn.data.edge_maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.general.html">sleap.nn.data.general</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.grouping.html">sleap.nn.data.grouping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.inference.html">sleap.nn.data.inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.instance_centroids.html">sleap.nn.data.instance_centroids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.instance_cropping.html">sleap.nn.data.instance_cropping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.normalization.html">sleap.nn.data.normalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.offset_regression.html">sleap.nn.data.offset_regression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.pipelines.html">sleap.nn.data.pipelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.providers.html">sleap.nn.data.providers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.resizing.html">sleap.nn.data.resizing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.training.html">sleap.nn.data.training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.utils.html">sleap.nn.data.utils</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../api.html">Developer API</a><ul>
+      <li>Previous: <a href="sleap.nn.paf_grouping.html" title="previous chapter">sleap.nn.paf_grouping</a></li>
+      <li>Next: <a href="sleap.nn.system.html" title="next chapter">sleap.nn.system</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019–2020, Murthy Lab @ Princeton.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/_autosummary/sleap.nn.peak_finding.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

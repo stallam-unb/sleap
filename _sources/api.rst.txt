@@ -1,7 +1,3 @@
-..
-  This file is auto-generated.
-
-
 .. _api:
 
 Developer API
@@ -11,12 +7,58 @@ Developer API
    :caption: API
 
 .. autosummary::
-   :toctree: api
+   :toctree: _autosummary
 
+   sleap.diagnostic
    sleap.instance
    sleap.message
+   sleap.prefs
+   sleap.rangelist
    sleap.skeleton
    sleap.util
+   sleap.version
+   sleap.gui.app
+   sleap.gui.color
+   sleap.gui.commands
+   sleap.gui.dataviews
+   sleap.gui.release_checker
+   sleap.gui.shortcuts
+   sleap.gui.state
+   sleap.gui.suggestions
+   sleap.gui.overlays.anchors
+   sleap.gui.overlays.base
+   sleap.gui.overlays.confmaps
+   sleap.gui.overlays.instance
+   sleap.gui.overlays.pafs
+   sleap.gui.overlays.tracks
+   sleap.gui.learning.configs
+   sleap.gui.learning.datagen
+   sleap.gui.learning.dialog
+   sleap.gui.learning.receptivefield
+   sleap.gui.learning.runners
+   sleap.gui.learning.scopedkeydict
+   sleap.gui.dialogs.delete
+   sleap.gui.dialogs.export_clip
+   sleap.gui.dialogs.filedialog
+   sleap.gui.dialogs.formbuilder
+   sleap.gui.dialogs.importvideos
+   sleap.gui.dialogs.merge
+   sleap.gui.dialogs.message
+   sleap.gui.dialogs.metrics
+   sleap.gui.dialogs.missingfiles
+   sleap.gui.dialogs.shortcuts
+   sleap.gui.widgets.imagedir
+   sleap.gui.widgets.mpl
+   sleap.gui.widgets.multicheck
+   sleap.gui.widgets.slider
+   sleap.gui.widgets.video
+   sleap.info.align
+   sleap.info.feature_suggestions
+   sleap.info.labels
+   sleap.info.metrics
+   sleap.info.summary
+   sleap.info.trackcleaner
+   sleap.info.write_tracking_h5
    sleap.io.asyncvideo
    sleap.io.convert
    sleap.io.dataset
@@ -52,8 +94,12 @@ Developer API
    sleap.nn.training
    sleap.nn.utils
    sleap.nn.viz
-   sleap.nn.tracker.components
-   sleap.nn.tracker.kalman
+   sleap.nn.config.data
+   sleap.nn.config.model
+   sleap.nn.config.optimization
+   sleap.nn.config.outputs
+   sleap.nn.config.training_job
+   sleap.nn.config.utils
    sleap.nn.architectures.common
    sleap.nn.architectures.encoder_decoder
    sleap.nn.architectures.hourglass
@@ -63,6 +109,8 @@ Developer API
    sleap.nn.architectures.resnet
    sleap.nn.architectures.unet
    sleap.nn.architectures.upsampling
+   sleap.nn.tracker.components
+   sleap.nn.tracker.kalman
    sleap.nn.data.augmentation
    sleap.nn.data.confidence_maps
    sleap.nn.data.dataset_ops
@@ -79,16 +127,3 @@ Developer API
    sleap.nn.data.resizing
    sleap.nn.data.training
    sleap.nn.data.utils
-   sleap.nn.config.data
-   sleap.nn.config.model
-   sleap.nn.config.optimization
-   sleap.nn.config.outputs
-   sleap.nn.config.training_job
-   sleap.nn.config.utils
-   sleap.info.align
-   sleap.info.feature_suggestions
-   sleap.info.labels
-   sleap.info.metrics
-   sleap.info.summary
-   sleap.info.trackcleaner
-   sleap.info.write_tracking_h5

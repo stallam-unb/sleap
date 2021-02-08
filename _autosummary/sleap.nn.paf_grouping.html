@@ -1,0 +1,1192 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sleap.nn.paf_grouping &#8212; SLEAP  documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="sleap.nn.peak_finding" href="sleap.nn.peak_finding.html" />
+    <link rel="prev" title="sleap.nn.monitor" href="sleap.nn.monitor.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-sleap.nn.paf_grouping">
+<span id="sleap-nn-paf-grouping"></span><h1>sleap.nn.paf_grouping<a class="headerlink" href="#module-sleap.nn.paf_grouping" title="Permalink to this headline">¶</a></h1>
+<p>This module provides a set of utilities for grouping peaks based on PAFs.</p>
+<p>Part affinity fields (PAFs) are a representation used to resolve the peak grouping
+problem for multi-instance pose estimation [1].</p>
+<p>They are a convenient way to represent directed graphs with support in image space. For
+each edge, a PAF can be represented by an image with two channels, corresponding to the
+x and y components of a unit vector pointing along the direction of the underlying
+directed graph formed by the connections of the landmarks belonging to an instance.</p>
+<p>Given a pair of putatively connected landmarks, the agreement between the line segment
+that connects them and the PAF vectors found at the coordinates along the same line can
+be used as a measure of “connectedness”. These scores can then be used to guide the
+instance-wise grouping of landmarks.</p>
+<p>This image space representation is particularly useful as it is amenable to neural
+network-based prediction from unlabeled images.</p>
+<p>A high-level API for grouping based on PAFs is provided through the <cite>PAFScorer</cite> class.</p>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id1"><span class="brackets">1</span></dt>
+<dd><p>Zhe Cao, Tomas Simon, Shih-En Wei, Yaser Sheikh. Realtime Multi-Person 2D
+Pose Estimation using Part Affinity Fields. In _CVPR_, 2017.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="sleap.nn.paf_grouping.EdgeConnection">
+<em class="property">class </em><code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">EdgeConnection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">src_peak_ind</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">dst_peak_ind</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">score</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#EdgeConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.EdgeConnection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indices to specify a matched connection between two peaks.</p>
+<p>This is a convenience named tuple for use in the matching pipeline.</p>
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.EdgeConnection.src_peak_ind">
+<code class="sig-name descname">src_peak_ind</code><a class="headerlink" href="#sleap.nn.paf_grouping.EdgeConnection.src_peak_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the source peak within all peaks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.EdgeConnection.dst_peak_ind">
+<code class="sig-name descname">dst_peak_ind</code><a class="headerlink" href="#sleap.nn.paf_grouping.EdgeConnection.dst_peak_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the destination peak within all peaks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.EdgeConnection.score">
+<code class="sig-name descname">score</code><a class="headerlink" href="#sleap.nn.paf_grouping.EdgeConnection.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Score of the match.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="sleap.nn.paf_grouping.EdgeType">
+<em class="property">class </em><code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">EdgeType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">src_node_ind</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">dst_node_ind</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#EdgeType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.EdgeType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indices to uniquely identify a single edge type.</p>
+<p>This is a convenience named tuple for use in the matching pipeline.</p>
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.EdgeType.src_node_ind">
+<code class="sig-name descname">src_node_ind</code><a class="headerlink" href="#sleap.nn.paf_grouping.EdgeType.src_node_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the source node type within the skeleton edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.EdgeType.dst_node_ind">
+<code class="sig-name descname">dst_node_ind</code><a class="headerlink" href="#sleap.nn.paf_grouping.EdgeType.dst_node_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the destination node type within the skeleton edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="sleap.nn.paf_grouping.PAFScorer">
+<em class="property">class </em><code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">PAFScorer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">part_names</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">edges</span><span class="p">:</span> <span class="n">List<span class="p">[</span>Tuple<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pafs_stride</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">max_edge_length_ratio</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">n_points</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10</span></em>, <em class="sig-param"><span class="n">min_instance_peaks</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#PAFScorer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scoring pipeline based on part affinity fields.</p>
+<p>This class facilitates grouping of predicted peaks based on PAFs. It holds a set of
+common parameters that are used across different steps of the pipeline.</p>
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.part_names">
+<code class="sig-name descname">part_names</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.part_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of string node names in the skeleton.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.edges">
+<code class="sig-name descname">edges</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of (src_node, dst_node) names in the skeleton.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>List[Tuple[str, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.pafs_stride">
+<code class="sig-name descname">pafs_stride</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.pafs_stride" title="Permalink to this definition">¶</a></dt>
+<dd><p>Output stride of the part affinity fields. This will be used to
+adjust the peak coordinates from full image to PAF subscripts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.max_edge_length_ratio">
+<code class="sig-name descname">max_edge_length_ratio</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.max_edge_length_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum expected length of a connected pair of points
+in relative image units. Candidate connections above this length will be
+penalized during matching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.n_points">
+<code class="sig-name descname">n_points</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.n_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of points to sample along the line integral.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.min_instance_peaks">
+<code class="sig-name descname">min_instance_peaks</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.min_instance_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum number of peaks the instance should have to be
+considered a real instance. Instances with fewer peaks than this will be
+discarded (useful for filtering spurious detections).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Union[int, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.edge_inds">
+<code class="sig-name descname">edge_inds</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.edge_inds" title="Permalink to this definition">¶</a></dt>
+<dd><p>The edges of the skeleton defined as a list of (source, destination)
+tuples of node indices. This is created automatically on initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>List[Tuple[int, int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.edge_types">
+<code class="sig-name descname">edge_types</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.edge_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of <cite>EdgeType</cite> instances representing the edges of the
+skeleton. This is created automatically on initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#sleap.nn.paf_grouping.EdgeType" title="sleap.nn.paf_grouping.EdgeType">sleap.nn.paf_grouping.EdgeType</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.n_nodes">
+<code class="sig-name descname">n_nodes</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.n_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of nodes in the skeleton as a scalar <cite>int</cite>. This is created
+automatically on initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PAFScorer.n_edges">
+<code class="sig-name descname">n_edges</code><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.n_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of edges in the skeleton as a scalar <cite>int</cite>. This is created
+automatically on initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Notes</p>
+<p>This class provides high level APIs for grouping peaks into instances using
+PAFs.</p>
+<p>The algorithm has three steps:</p>
+<blockquote>
+<div><p>1. Find all candidate connections between peaks and compute their matching
+score based on the PAFs.</p>
+<p>2. Match candidate connections using the connectivity score such that no
+peak is used in two connections of the same type.</p>
+<ol class="arabic simple" start="3">
+<li><p>Group matched connections into complete instances.</p></li>
+</ol>
+</div></blockquote>
+<p>In general, the output from a peak finder (such as multi-peak confidence map
+prediction network) can be passed into <cite>PAFScorer.predict()</cite> to get back
+complete instances.</p>
+<p>For finer control over the grouping pipeline steps, use the instance methods in
+this class or the lower level functions in <cite>sleap.nn.paf_grouping</cite>.</p>
+<dl class="py method">
+<dt id="sleap.nn.paf_grouping.PAFScorer.from_config">
+<em class="property">classmethod </em><code class="sig-name descname">from_config</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n"><a class="reference internal" href="sleap.nn.config.model.html#sleap.nn.config.model.MultiInstanceConfig" title="sleap.nn.config.model.MultiInstanceConfig">sleap.nn.config.model.MultiInstanceConfig</a></span></em>, <em class="sig-param"><span class="n">max_edge_length_ratio</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">n_points</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10</span></em>, <em class="sig-param"><span class="n">min_instance_peaks</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#sleap.nn.paf_grouping.PAFScorer" title="sleap.nn.paf_grouping.PAFScorer">sleap.nn.paf_grouping.PAFScorer</a><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#PAFScorer.from_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.from_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the PAF scorer from a <cite>MultiInstanceConfig</cite> head config.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> – <cite>MultiInstanceConfig</cite> from <cite>cfg.model.heads.multi_instance</cite>.</p></li>
+<li><p><strong>max_edge_length_ratio</strong> – The maximum expected length of a connected pair of
+points relative image units. Candidate connections above this length
+will be penalized during matching.</p></li>
+<li><p><strong>min_edge_score</strong> – Minimum score required to classify a connection as correct.</p></li>
+<li><p><strong>n_points</strong> – Number of points to sample along the line integral.</p></li>
+<li><p><strong>min_instance_peaks</strong> – Minimum number of peaks the instance should have to be
+considered a real instance. Instances with fewer peaks than this will be
+discarded (useful for filtering spurious detections).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The initialized instance of <cite>PAFScorer</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sleap.nn.paf_grouping.PAFScorer.group_instances">
+<code class="sig-name descname">group_instances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peaks</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">peak_vals</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">peak_channel_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_edge_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_src_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_dst_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_line_scores</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#PAFScorer.group_instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.group_instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group matched connections into full instances for a batch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peaks</strong> – The sample-grouped detected peaks in a batch as a <cite>tf.RaggedTensor</cite>
+of shape <cite>(n_samples, (n_peaks), 2)</cite> and dtype <cite>tf.float32</cite>. These
+should be <cite>(x, y)</cite> coordinates of each peak in the image scale.</p></li>
+<li><p><strong>peak_vals</strong> – The sample-grouped scores of the detected peaks in a batch as a
+<cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_peaks))</cite> and dtype
+<cite>tf.float32</cite>.</p></li>
+<li><p><strong>peak_channel_inds</strong> – The sample-grouped indices of the channel (node) that
+each detected peak is associated with as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_peaks))</cite> and dtype <cite>tf.int32</cite>.</p></li>
+<li><p><strong>match_edge_inds</strong> – Sample-grouped indices of the skeleton edge that each
+connection corresponds to as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_connections))</cite> and dtype <cite>tf.int32</cite>. This can be
+generated by <cite>PAFScorer.match_candidates()</cite>.</p></li>
+<li><p><strong>match_src_peak_inds</strong> – Sample-grouped indices of the source peaks that form
+each connection as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_connections))</cite> and dtype <cite>tf.int32</cite>. Important: These
+indices correspond to the edge-grouped peaks, not the set of all peaks
+in each sample. This can be generated by <cite>PAFScorer.match_candidates()</cite>.</p></li>
+<li><p><strong>match_dst_peak_inds</strong> – Sample-grouped indices of the destination peaks that
+form each connection as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_connections))</cite> and dtype <cite>tf.int32</cite>. Important: These
+indices correspond to the edge-grouped peaks, not the set of all peaks
+in the sample. This can be generated by <cite>PAFScorer.match_candidates()</cite>.</p></li>
+<li><p><strong>match_line_scores</strong> – Sample-grouped PAF line scores of the matched connections
+as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite> and dtype
+<cite>tf.float32</cite>. This can be generated by <cite>PAFScorer.match_candidates()</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of arrays with the grouped instances for the whole batch grouped by
+sample:</p>
+<p><cite>predicted_instances</cite>: The sample- and instance-grouped coordinates for each
+instance as <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_instances), n_nodes, 2)</cite> and dtype <cite>tf.float32</cite>. Missing
+peaks are represented by <a href="#id2"><span class="problematic" id="id3">`</span></a>NaN`s.</p>
+<p><cite>predicted_peak_scores</cite>: The sample- and instance-grouped confidence map
+values for each peak as an array of <cite>(n_samples, (n_instances), n_nodes)</cite>
+and dtype <cite>tf.float32</cite>.</p>
+<p><cite>predicted_instance_scores</cite>: The sample-grouped instance grouping score for
+each instance as an array of shape <cite>(n_samples, (n_instances))</cite> and dtype
+<cite>tf.float32</cite>.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This is a convenience wrapper for the standalone <cite>group_instances_batch()</cite>.</p>
+<p>See also: PAFScorer.match_candidates, group_instances_batch</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sleap.nn.paf_grouping.PAFScorer.match_candidates">
+<code class="sig-name descname">match_candidates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">edge_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">edge_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">line_scores</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#PAFScorer.match_candidates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.match_candidates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Match candidate connections for a batch based on PAF scores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge_inds</strong> – Sample-grouped edge indices as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_candidates))</cite> and dtype <cite>tf.int32</cite> indicating the
+indices of the edge that each of the candidate connections belongs to.
+Can be generated using <cite>PAFScorer.score_paf_lines()</cite>.</p></li>
+<li><p><strong>edge_peak_inds</strong> – Sample-grouped indices of the peaks that form the source and
+destination of each candidate connection as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_candidates), 2)</cite> and dtype <cite>tf.int32</cite>. Can be generated
+using <cite>PAFScorer.score_paf_lines()</cite>.</p></li>
+<li><p><strong>line_scores</strong> – Sample-grouped scores for each candidate connection as a
+<cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_candidates))</cite> and dtype
+<cite>tf.float32</cite>. Can be generated using <cite>PAFScorer.score_paf_lines()</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><cite>match_edge_inds</cite>: Sample-grouped indices of the skeleton edge for each
+connection as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite>
+and dtype <cite>tf.int32</cite>.</p>
+<p><cite>match_src_peak_inds</cite>: Sample-grouped indices of the source peaks that form
+each connection as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_connections))</cite> and dtype <cite>tf.int32</cite>. Important: These
+indices correspond to the edge-grouped peaks, not the set of all peaks in
+the sample.</p>
+<p><cite>match_dst_peak_inds</cite>: Sample-grouped indices of the destination peaks that
+form each connection as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_connections))</cite> and dtype <cite>tf.int32</cite>. Important: These
+indices correspond to the edge-grouped peaks, not the set of all peaks in
+the sample.</p>
+<p><cite>match_line_scores</cite>: Sample-grouped PAF line scores of the matched
+connections as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite>
+and dtype <cite>tf.float32</cite>.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>The connection peaks for each edge matched based on score as 4-tuple of</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This is a convenience wrapper for the standalone <cite>match_candidates_batch()</cite>.</p>
+<p>See also: PAFScorer.score_paf_lines, match_candidates_batch</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sleap.nn.paf_grouping.PAFScorer.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pafs</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peaks</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">peak_vals</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">peak_channel_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#PAFScorer.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group a batch of predicted peaks into full instance predictions using PAFs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pafs</strong> – The batch of part affinity fields as a <cite>tf.Tensor</cite> of shape
+<cite>(n_samples, height, width, 2 * n_edges)</cite> and type <cite>tf.float32</cite>.</p></li>
+<li><p><strong>peaks</strong> – The coordinates of the peaks grouped by sample as a <cite>tf.RaggedTensor</cite>
+of shape <cite>(n_samples, (n_peaks), 2)</cite>.</p></li>
+<li><p><strong>peak_vals</strong> – The sample-grouped scores of the detected peaks in a batch as a
+<cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_peaks))</cite> and dtype
+<cite>tf.float32</cite>.</p></li>
+<li><p><strong>peak_channel_inds</strong> – The channel (node) that each peak in <cite>peaks</cite> corresponds
+to as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_peaks))</cite> and dtype
+<cite>tf.int32</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of arrays with the grouped instances for the whole batch grouped by
+sample:</p>
+<p><cite>predicted_instances</cite>: The sample- and instance-grouped coordinates for each
+instance as <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_instances), n_nodes, 2)</cite> and dtype <cite>tf.float32</cite>. Missing
+peaks are represented by <a href="#id4"><span class="problematic" id="id5">`</span></a>NaN`s.</p>
+<p><cite>predicted_peak_scores</cite>: The sample- and instance-grouped confidence map
+values for each peak as an array of <cite>(n_samples, (n_instances), n_nodes)</cite>
+and dtype <cite>tf.float32</cite>.</p>
+<p><cite>predicted_instance_scores</cite>: The sample-grouped instance grouping score for
+each instance as an array of shape <cite>(n_samples, (n_instances))</cite> and dtype
+<cite>tf.float32</cite>.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This is a high level API for grouping peaks into instances using PAFs.</p>
+<p>See the <cite>PAFScorer</cite> class documentation for more details on the algorithm.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PAFScorer.score_paf_lines, PAFScorer.match_candidates,
+PAFScorer.group_instances</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="sleap.nn.paf_grouping.PAFScorer.score_paf_lines">
+<code class="sig-name descname">score_paf_lines</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pafs</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peaks</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peak_channel_inds</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#PAFScorer.score_paf_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.PAFScorer.score_paf_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and score PAF lines formed between connection candidates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pafs</strong> – The batch of part affinity fields as a <cite>tf.Tensor</cite> of shape
+<cite>(n_samples, height, width, 2 * n_edges)</cite> and type <cite>tf.float32</cite>.</p></li>
+<li><p><strong>peaks</strong> – The coordinates of the peaks grouped by sample as a <cite>tf.RaggedTensor</cite>
+of shape <cite>(n_samples, (n_peaks), 2)</cite>.</p></li>
+<li><p><strong>peak_channel_inds</strong> – The channel (node) that each peak in <cite>peaks</cite> corresponds
+to as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_peaks))</cite> and dtype
+<cite>tf.int32</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of <cite>(edge_inds, edge_peak_inds, line_scores)</cite> with the connections
+and their scores based on the PAFs.</p>
+<p><cite>edge_inds</cite>: Sample-grouped indices of the edge in the skeleton that each
+connection corresponds to as <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_candidates))</cite> and dtype <cite>tf.int32</cite>.</p>
+<p><cite>edge_peak_inds</cite>: Sample-grouped indices of the peaks that form each
+connection as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_candidates), 2)</cite>
+and dtype <cite>tf.int32</cite>. The last axis corresponds to the
+<cite>[source, destination]</cite> peak indices. These index into the input
+<cite>peak_channel_inds</cite>.</p>
+<p><cite>line_scores</cite>: Sample-grouped scores for each candidate connection as a
+<cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_candidates))</cite> and dtype
+<cite>tf.float32</cite>.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This is a convenience wrapper for the standalone <cite>score_paf_lines_batch()</cite>.</p>
+<p>See also: score_paf_lines_batch</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="sleap.nn.paf_grouping.PeakID">
+<em class="property">class </em><code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">PeakID</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_ind</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">peak_ind</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#PeakID"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.PeakID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indices to uniquely identify a single peak.</p>
+<p>This is a convenience named tuple for use in the matching pipeline.</p>
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PeakID.node_ind">
+<code class="sig-name descname">node_ind</code><a class="headerlink" href="#sleap.nn.paf_grouping.PeakID.node_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the node type (channel) of the peak.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="sleap.nn.paf_grouping.PeakID.peak_ind">
+<code class="sig-name descname">peak_ind</code><a class="headerlink" href="#sleap.nn.paf_grouping.PeakID.peak_ind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of the peak within its node type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.assign_connections_to_instances">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">assign_connections_to_instances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">connections</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span><a class="reference internal" href="#sleap.nn.paf_grouping.EdgeType" title="sleap.nn.paf_grouping.EdgeType">sleap.nn.paf_grouping.EdgeType</a><span class="p">, </span>List<span class="p">[</span><a class="reference internal" href="#sleap.nn.paf_grouping.EdgeConnection" title="sleap.nn.paf_grouping.EdgeConnection">sleap.nn.paf_grouping.EdgeConnection</a><span class="p">]</span><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">min_instance_peaks</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>int<span class="p">, </span>float<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">n_nodes</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span><a class="reference internal" href="#sleap.nn.paf_grouping.PeakID" title="sleap.nn.paf_grouping.PeakID">sleap.nn.paf_grouping.PeakID</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#assign_connections_to_instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.assign_connections_to_instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns connected edges to instances via greedy graph partitioning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>connections</strong> – A dict that maps EdgeType to a list of EdgeConnections found
+through connection scoring. This can be generated by the
+filter_connection_candidates function.</p></li>
+<li><p><strong>min_instance_peaks</strong> – If this is greater than 0, grouped instances with fewer
+assigned peaks than this threshold will be excluded. If a float in the
+range (0., 1.] is provided, this is interpreted as a fraction of the total
+number of nodes in the skeleton. If an integer is provided, this is the
+absolute minimum number of peaks.</p></li>
+<li><p><strong>n_nodes</strong> – Total node type count. Used to convert min_instance_peaks to an
+absolute number when a fraction is specified. If not provided, the node
+count is inferred from the unique node inds in connections.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A dict mapping PeakID to a unique instance ID specified
+as an integer.</p>
+<p>A PeakID is a tuple of (node_type_ind, peak_ind), where the peak_ind is the
+index or identifier specified in a EdgeConnection as a src_peak_ind or
+dst_peak_ind.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>instance_assignments</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Instance IDs are not necessarily consecutive since some instances may be
+filtered out during the partitioning or filtering.</p>
+<p>This function expects connections from a single sample/frame!</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.get_connection_candidates">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">get_connection_candidates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peak_channel_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">skeleton_edges</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">n_nodes</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#get_connection_candidates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.get_connection_candidates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the indices of all the possible connections formed by the detected peaks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peak_channel_inds_sample</strong> – The channel indices of the peaks found in a sample.
+This is a <cite>tf.Tensor</cite> of shape <cite>(n_peaks,)</cite> and dtype <cite>tf.int32</cite> that is
+used to represent a detected peak by its channel/node index in the skeleton.</p></li>
+<li><p><strong>skeleton_edges</strong> – The indices of the nodes that form the skeleton graph as a
+<cite>tf.Tensor</cite> of shape <cite>(n_edges, 2)</cite> and dtype <cite>tf.int32</cite> where each row
+corresponds to the source and destination node indices.</p></li>
+<li><p><strong>n_nodes</strong> – The total number of nodes in the skeleton as a scalar integer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of <cite>(edge_inds, edge_peak_inds)</cite>.</p>
+<p><cite>edge_inds</cite> is a <cite>tf.Tensor</cite> of shape <cite>(n_candidates,)</cite> indicating the indices
+of the edge that each of the candidate connections belongs to.</p>
+<p><cite>edge_peak_inds</cite> is a <cite>tf.Tensor</cite> of shape <cite>(n_candidates, 2)</cite> with the indices
+of the peaks that form the source and destination of each candidate connection.
+This indexes into the input <cite>peak_channel_inds_sample</cite>.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.get_paf_lines">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">get_paf_lines</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pafs_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peaks_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">edge_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">edge_inds</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">n_line_points</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">pafs_stride</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; tensorflow.python.framework.ops.Tensor<a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#get_paf_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.get_paf_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the PAF values at the lines formed between all detected peaks in a sample.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pafs_sample</strong> – The PAFs for the sample as a <cite>tf.Tensor</cite> of shape
+<cite>(height, width, 2 * n_edges)</cite>.</p></li>
+<li><p><strong>peaks_sample</strong> – The detected peaks in a sample as a <cite>tf.Tensor</cite> of shape
+<cite>(n_peaks, 2)</cite> and dtype <cite>tf.float32</cite>. These should be <cite>(x, y)</cite> coordinates
+of each peak in the image scale (they will be scaled by the <cite>pafs_stride</cite>).</p></li>
+<li><p><strong>edge_peak_inds</strong> – A <cite>tf.Tensor</cite> of shape <cite>(n_candidates, 2)</cite> and dtype <cite>tf.int32</cite>
+with the indices of the peaks that form the source and destination of each
+candidate connection. This indexes into the input <cite>peaks_sample</cite>. Can be
+generated using <cite>get_connection_candidates()</cite>.</p></li>
+<li><p><strong>edge_inds</strong> – A <cite>tf.Tensor</cite> of shape <cite>(n_candidates,)</cite> and dtype <cite>tf.int32</cite>
+indicating the indices of the edge that each of the candidate connections
+belongs to. Can be generated using <cite>get_connection_candidates()</cite>.</p></li>
+<li><p><strong>n_line_points</strong> – The number of points to interpolate between source and
+destination peaks in each connection candidate as a scalar integer. Values
+ranging from 5 to 10 are pretty reasonable.</p></li>
+<li><p><strong>pafs_stride</strong> – The stride (1/scale) of the PAFs that these lines will need to
+index into relative to the image. Coordinates in <cite>peaks_sample</cite> will be
+divided by this value to adjust the indexing into the PAFs tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>The PAF vectors at all of the line points as a <cite>tf.Tensor</cite> of shape
+<cite>(n_candidates, n_line_points, 2, 3)</cite> and dtype <cite>tf.int32</cite>. These subscripts can
+be used directly with <cite>tf.gather_nd</cite> to pull out the PAF values at the lines.</p>
+<p>The last dimension of the line subscripts correspond to the full
+<cite>[row, col, channel]</cite> subscripts of each element of the lines. Axis -2 contains
+the same <cite>[row, col]</cite> for each line but <cite>channel</cite> is adjusted to match the
+channels in the PAFs tensor.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If only the subscripts are needed, use <cite>make_line_subs()</cite> to generate the lines
+without retrieving the PAF vector at the line points.</p>
+<p>See also: get_connection_candidates, make_line_subs, score_paf_lines</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.group_instances_batch">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">group_instances_batch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peaks</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">peak_vals</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">peak_channel_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_edge_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_src_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_dst_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">match_line_scores</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">n_nodes</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">n_edges</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">edge_types</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#sleap.nn.paf_grouping.EdgeType" title="sleap.nn.paf_grouping.EdgeType">sleap.nn.paf_grouping.EdgeType</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">min_instance_peaks</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#group_instances_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.group_instances_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group matched connections into full instances for a batch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peaks</strong> – The sample-grouped detected peaks in a batch as a <cite>tf.RaggedTensor</cite> of
+shape <cite>(n_samples, (n_peaks), 2)</cite> and dtype <cite>tf.float32</cite>. These should be
+<cite>(x, y)</cite> coordinates of each peak in the image scale.</p></li>
+<li><p><strong>peak_vals</strong> – The sample-grouped scores of the detected peaks in a batch as a
+<cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_peaks))</cite> and dtype <cite>tf.float32</cite>.</p></li>
+<li><p><strong>peak_channel_inds</strong> – The sample-grouped indices of the channel (node) that each
+detected peak is associated with as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_peaks))</cite> and dtype <cite>tf.int32</cite>.</p></li>
+<li><p><strong>match_edge_inds</strong> – Sample-grouped indices of the skeleton edge that each
+connection corresponds to as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_connections))</cite> and dtype <cite>tf.int32</cite>. This can be generated
+by <cite>match_candidates_batch()</cite>.</p></li>
+<li><p><strong>match_src_peak_inds</strong> – Sample-grouped indices of the source peaks that form each
+connection as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite>
+and dtype <cite>tf.int32</cite>. Important: These indices correspond to the
+edge-grouped peaks, not the set of all peaks in each sample. This can be
+generated by <cite>match_candidates_batch()</cite>.</p></li>
+<li><p><strong>match_dst_peak_inds</strong> – Sample-grouped indices of the destination peaks that form
+each connection as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_connections))</cite> and dtype <cite>tf.int32</cite>. Important: These
+indices correspond to the edge-grouped peaks, not the set of all peaks in
+the sample. This can be generated by <cite>match_candidates_batch()</cite>.</p></li>
+<li><p><strong>match_line_scores</strong> – Sample-grouped PAF line scores of the matched connections as
+a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite> and dtype
+<cite>tf.float32</cite>. This can be generated by <cite>match_candidates_batch()</cite>.</p></li>
+<li><p><strong>n_nodes</strong> – The total number of nodes in the skeleton as a scalar integer.</p></li>
+<li><p><strong>n_edges</strong> – A scalar <cite>int</cite> denoting the number of edges in the skeleton.</p></li>
+<li><p><strong>edge_types</strong> – A list of <a href="#id6"><span class="problematic" id="id7">`</span></a>EdgeType`s associated with the skeleton.</p></li>
+<li><p><strong>min_instance_peaks</strong> – If this is greater than 0, grouped instances with fewer
+assigned peaks than this threshold will be excluded. If a <cite>float</cite> in the
+range <cite>(0., 1.]</cite> is provided, this is interpreted as a fraction of the total
+number of nodes in the skeleton. If an <cite>int</cite> is provided, this is the
+absolute minimum number of peaks.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of arrays with the grouped instances for the whole batch grouped by
+sample:</p>
+<p><cite>predicted_instances</cite>: The sample- and instance-grouped coordinates for each
+instance as <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_instances), n_nodes, 2)</cite>
+and dtype <cite>tf.float32</cite>. Missing peaks are represented by <a href="#id8"><span class="problematic" id="id9">`</span></a>NaN`s.</p>
+<p><cite>predicted_peak_scores</cite>: The sample- and instance-grouped confidence map values
+for each peak as an array of <cite>(n_samples, (n_instances), n_nodes)</cite> and dtype
+<cite>tf.float32</cite>.</p>
+<p><cite>predicted_instance_scores</cite>: The sample-grouped instance grouping score for each
+instance as an array of shape <cite>(n_samples, (n_instances))</cite> and dtype
+<cite>tf.float32</cite>.</p>
+</p>
+</dd>
+</dl>
+<p>See also: match_candidates_batch, group_instances_sample</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.group_instances_sample">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">group_instances_sample</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peaks_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peak_scores_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peak_channel_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">match_edge_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">match_src_peak_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">match_dst_peak_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">match_line_scores_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">n_nodes</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">n_edges</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">edge_types</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#sleap.nn.paf_grouping.EdgeType" title="sleap.nn.paf_grouping.EdgeType">sleap.nn.paf_grouping.EdgeType</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">min_instance_peaks</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>numpy.ndarray<span class="p">, </span>numpy.ndarray<span class="p">, </span>numpy.ndarray<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#group_instances_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.group_instances_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group matched connections into full instances for a single sample.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peaks_sample</strong> – The detected peaks in a sample as a <cite>tf.Tensor</cite> of shape
+<cite>(n_peaks, 2)</cite> and dtype <cite>tf.float32</cite>. These should be <cite>(x, y)</cite> coordinates
+of each peak in the image scale.</p></li>
+<li><p><strong>peak_scores_sample</strong> – The scores of the detected peaks in a sample as a
+<cite>tf.Tensor</cite> of shape <cite>(n_peaks,)</cite> and dtype <cite>tf.float32</cite>.</p></li>
+<li><p><strong>peak_channel_inds_sample</strong> – The indices of the channel (node) that each detected
+peak is associated with as a <cite>tf.Tensor</cite> of shape <cite>(n_peaks,)</cite> and dtype
+<cite>tf.int32</cite>.</p></li>
+<li><p><strong>match_edge_inds_sample</strong> – Indices of the skeleton edge that each connection
+corresponds to as a <cite>tf.Tensor</cite> of shape <cite>(n_connections,)</cite> and dtype
+<cite>tf.int32</cite>. This can be generated by <cite>match_candidates_sample()</cite>.</p></li>
+<li><p><strong>match_src_peak_inds_sample</strong> – Indices of the source peaks that form each
+connection as a <cite>tf.Tensor</cite> of shape <cite>(n_connections,)</cite> and dtype
+<cite>tf.int32</cite>. Important: These indices correspond to the edge-grouped peaks,
+not the set of all peaks in the sample. This can be generated by
+<cite>match_candidates_sample()</cite>.</p></li>
+<li><p><strong>match_dst_peak_inds_sample</strong> – Indices of the destination peaks that form each
+connection as a <cite>tf.Tensor</cite> of shape <cite>(n_connections,)</cite> and dtype
+<cite>tf.int32</cite>. Important: These indices correspond to the edge-grouped peaks,
+not the set of all peaks in the sample. This can be generated by
+<cite>match_candidates_sample()</cite>.</p></li>
+<li><p><strong>match_line_scores_sample</strong> – PAF line scores of the matched connections as a
+<cite>tf.Tensor</cite> of shape <cite>(n_connections,)</cite> and dtype <cite>tf.float32</cite>. This can be
+generated by <cite>match_candidates_sample()</cite>.</p></li>
+<li><p><strong>n_nodes</strong> – The total number of nodes in the skeleton as a scalar integer.</p></li>
+<li><p><strong>n_edges</strong> – A scalar <cite>int</cite> denoting the number of edges in the skeleton.</p></li>
+<li><p><strong>edge_types</strong> – A list of <a href="#id10"><span class="problematic" id="id11">`</span></a>EdgeType`s associated with the skeleton.</p></li>
+<li><p><strong>min_instance_peaks</strong> – If this is greater than 0, grouped instances with fewer
+assigned peaks than this threshold will be excluded. If a <cite>float</cite> in the
+range <cite>(0., 1.]</cite> is provided, this is interpreted as a fraction of the total
+number of nodes in the skeleton. If an <cite>int</cite> is provided, this is the
+absolute minimum number of peaks.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><cite>predicted_instances</cite>: The grouped coordinates for each instance as an array of
+shape <cite>(n_instances, n_nodes, 2)</cite> and dtype <cite>float32</cite>. Missing peaks are
+represented by <a href="#id12"><span class="problematic" id="id13">`</span></a>np.NaN`s.</p>
+<p><cite>predicted_peak_scores</cite>: The confidence map values for each peak as an array of
+<cite>(n_instances, n_nodes)</cite> and dtype <cite>float32</cite>.</p>
+<p><cite>predicted_instance_scores</cite>: The grouping score for each instance as an array of
+shape <cite>(n_instances,)</cite> and dtype <cite>float32</cite>.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>A tuple of arrays with the grouped instances</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function is meant to be run as a <cite>tf.py_function</cite> within a graph (see
+<cite>group_instances_batch()</cite>).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.make_line_subs">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">make_line_subs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peaks_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">edge_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">edge_inds</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">n_line_points</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">pafs_stride</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; tensorflow.python.framework.ops.Tensor<a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#make_line_subs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.make_line_subs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the lines between candidate connections for evaluating the PAFs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peaks_sample</strong> – The detected peaks in a sample as a <cite>tf.Tensor</cite> of shape
+<cite>(n_peaks, 2)</cite> and dtype <cite>tf.float32</cite>. These should be <cite>(x, y)</cite> coordinates
+of each peak in the image scale (they will be scaled by the <cite>pafs_stride</cite>).</p></li>
+<li><p><strong>edge_peak_inds</strong> – A <cite>tf.Tensor</cite> of shape <cite>(n_candidates, 2)</cite> and dtype <cite>tf.int32</cite>
+with the indices of the peaks that form the source and destination of each
+candidate connection. This indexes into the input <cite>peaks_sample</cite>. Can be
+generated using <cite>get_connection_candidates()</cite>.</p></li>
+<li><p><strong>edge_inds</strong> – A <cite>tf.Tensor</cite> of shape <cite>(n_candidates,)</cite> and dtype <cite>tf.int32</cite>
+indicating the indices of the edge that each of the candidate connections
+belongs to. Can be generated using <cite>get_connection_candidates()</cite>.</p></li>
+<li><p><strong>n_line_points</strong> – The number of points to interpolate between source and
+destination peaks in each connection candidate as a scalar integer. Values
+ranging from 5 to 10 are pretty reasonable.</p></li>
+<li><p><strong>pafs_stride</strong> – The stride (1/scale) of the PAFs that these lines will need to
+index into relative to the image. Coordinates in <cite>peaks_sample</cite> will be
+divided by this value to adjust the indexing into the PAFs tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>The line subscripts as a <cite>tf.Tensor</cite> of shape
+<cite>(n_candidates, n_line_points, 2, 3)</cite> and dtype <cite>tf.int32</cite>. These subscripts can
+be used directly with <cite>tf.gather_nd</cite> to pull out the PAF values at the lines.</p>
+<p>The last dimension of the line subscripts correspond to the full
+<cite>[row, col, channel]</cite> subscripts of each element of the lines. Axis -2 contains
+the same <cite>[row, col]</cite> for each line but <cite>channel</cite> is adjusted to match the
+channels in the PAFs tensor.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The subscripts are interpolated via nearest neighbor, so multiple fractional
+coordinates may map on to the same pixel if the line is short.</p>
+<p>See also: get_connection_candidates</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.make_predicted_instances">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">make_predicted_instances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peaks</span><span class="p">:</span> <span class="n">numpy.array</span></em>, <em class="sig-param"><span class="n">peak_scores</span><span class="p">:</span> <span class="n">numpy.array</span></em>, <em class="sig-param"><span class="n">connections</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#sleap.nn.paf_grouping.EdgeConnection" title="sleap.nn.paf_grouping.EdgeConnection">sleap.nn.paf_grouping.EdgeConnection</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">instance_assignments</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span><a class="reference internal" href="#sleap.nn.paf_grouping.PeakID" title="sleap.nn.paf_grouping.PeakID">sleap.nn.paf_grouping.PeakID</a><span class="p">, </span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>numpy.array<span class="p">, </span>numpy.array<span class="p">, </span>numpy.array<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#make_predicted_instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.make_predicted_instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group peaks by assignments and accumulate scores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peaks</strong> – Node-grouped peaks</p></li>
+<li><p><strong>peak_scores</strong> – Node-grouped peak scores</p></li>
+<li><p><strong>connections</strong> – <a href="#id14"><span class="problematic" id="id15">`</span></a>EdgeConnection`s grouped by edge type</p></li>
+<li><p><strong>instance_assignments</strong> – <cite>PeakID</cite> to instance ID mapping</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>Tuple of (predicted_instances, predicted_peak_scores, predicted_instance_scores)</p>
+<p>predicted_instances: (n_instances, n_nodes, 2) array
+predicted_peak_scores: (n_instances, n_nodes) array
+predicted_instance_scores: (n_instances,) array</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.match_candidates_batch">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">match_candidates_batch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">edge_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">edge_peak_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">line_scores</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">n_edges</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#match_candidates_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.match_candidates_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Match candidate connections for a batch based on PAF scores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge_inds</strong> – Sample-grouped edge indices as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_candidates))</cite> and dtype <cite>tf.int32</cite> indicating the indices
+of the edge that each of the candidate connections belongs to. Can be
+generated using <cite>score_paf_lines_batch()</cite>.</p></li>
+<li><p><strong>edge_peak_inds</strong> – Sample-grouped indices of the peaks that form the source and
+destination of each candidate connection as a <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_candidates), 2)</cite> and dtype <cite>tf.int32</cite>. Can be generated
+using <cite>score_paf_lines_batch()</cite>.</p></li>
+<li><p><strong>line_scores</strong> – Sample-grouped scores for each candidate connection as a
+<cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_candidates))</cite> and dtype
+<cite>tf.float32</cite>. Can be generated using <cite>score_paf_lines_batch()</cite>.</p></li>
+<li><p><strong>n_edges</strong> – A scalar <cite>int</cite> denoting the number of edges in the skeleton.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><cite>match_edge_inds</cite>: Sample-grouped indices of the skeleton edge for each
+connection as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite> and
+dtype <cite>tf.int32</cite>.</p>
+<p><cite>match_src_peak_inds</cite>: Sample-grouped indices of the source peaks that form each
+connection as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite> and
+dtype <cite>tf.int32</cite>. Important: These indices correspond to the edge-grouped peaks,
+not the set of all peaks in the sample.</p>
+<p><cite>match_dst_peak_inds</cite>: Sample-grouped indices of the destination peaks that form
+each connection as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite>
+and dtype <cite>tf.int32</cite>. Important: These indices correspond to the edge-grouped
+peaks, not the set of all peaks in the sample.</p>
+<p><cite>match_line_scores</cite>: Sample-grouped PAF line scores of the matched connections
+as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_connections))</cite> and dtype
+<cite>tf.float32</cite>.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>The connection peaks for each edge matched based on score as 4-tuple of</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The matching is performed using the Munkres algorithm implemented in
+<cite>scipy.optimize.linear_sum_assignment()</cite> which is wrapped in
+<cite>tf_linear_sum_assignment()</cite> for execution within a graph.</p>
+<p>See also: match_candidates_sample, score_paf_lines_batch, group_instances_batch</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.match_candidates_sample">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">match_candidates_sample</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">edge_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">edge_peak_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">line_scores_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">n_edges</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">, </span>tensorflow.python.framework.ops.Tensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#match_candidates_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.match_candidates_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Match candidate connections for a sample based on PAF scores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge_inds_sample</strong> – A <cite>tf.Tensor</cite> of shape <cite>(n_candidates,)</cite> and dtype <cite>tf.int32</cite>
+indicating the indices of the edge that each of the candidate connections
+belongs to for the sample. Can be generated using
+<cite>get_connection_candidates()</cite>.</p></li>
+<li><p><strong>edge_peak_inds_sample</strong> – A <cite>tf.Tensor</cite> of shape <cite>(n_candidates, 2)</cite> and dtype
+<cite>tf.int32</cite> with the indices of the peaks that form the source and
+destination of each candidate connection. Can be generated using
+<cite>get_connection_candidates()</cite>.</p></li>
+<li><p><strong>line_scores_sample</strong> – Scores for each candidate connection in the sample as a
+<cite>tf.Tensor</cite> of shape <cite>(n_candidates,)</cite> and dtype <cite>tf.float32</cite>. Can be
+generated using <cite>score_paf_lines()</cite>.</p></li>
+<li><p><strong>n_edges</strong> – A scalar <cite>int</cite> denoting the number of edges in the skeleton.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p><cite>match_edge_inds</cite>: Indices of the skeleton edge that each connection corresponds
+to as a <cite>tf.Tensor</cite> of shape <cite>(n_connections,)</cite> and dtype <cite>tf.int32</cite>.</p>
+<p><cite>match_src_peak_inds</cite>: Indices of the source peaks that form each connection
+as a <cite>tf.Tensor</cite> of shape <cite>(n_connections,)</cite> and dtype <cite>tf.int32</cite>. Important:
+These indices correspond to the edge-grouped peaks, not the set of all peaks in
+the sample.</p>
+<p><cite>match_dst_peak_inds</cite>: Indices of the destination peaks that form each
+connection as a <cite>tf.Tensor</cite> of shape <cite>(n_connections,)</cite> and dtype <cite>tf.int32</cite>.
+Important: These indices correspond to the edge-grouped peaks, not the set of
+all peaks in the sample.</p>
+<p><cite>match_line_scores</cite>: PAF line scores of the matched connections as a <cite>tf.Tensor</cite>
+of shape <cite>(n_connections,)</cite> and dtype <cite>tf.float32</cite>.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>The connection peaks for each edge matched based on score as 4-tuple of</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The matching is performed using the Munkres algorithm implemented in
+<cite>scipy.optimize.linear_sum_assignment()</cite> which is wrapped in
+<cite>tf_linear_sum_assignment()</cite> for execution within a graph.</p>
+<p>See also: match_candidates_batch</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.score_paf_lines">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">score_paf_lines</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">paf_lines_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peaks_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">edge_peak_inds_sample</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">max_edge_length</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span> &#x2192; tensorflow.python.framework.ops.Tensor<a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#score_paf_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.score_paf_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the connectivity score for each PAF line in a sample.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>paf_lines_sample</strong> – The PAF vectors evaluated at the lines formed between
+candidate conncetions as a <cite>tf.Tensor</cite> of shape
+<cite>(n_candidates, n_line_points, 2, 3)</cite> dtype <cite>tf.int32</cite>. This can be
+generated by <cite>get_paf_lines()</cite>.</p></li>
+<li><p><strong>peaks_sample</strong> – The detected peaks in a sample as a <cite>tf.Tensor</cite> of shape
+<cite>(n_peaks, 2)</cite> and dtype <cite>tf.float32</cite>. These should be <cite>(x, y)</cite> coordinates
+of each peak in the image scale.</p></li>
+<li><p><strong>edge_peak_inds_sample</strong> – A <cite>tf.Tensor</cite> of shape <cite>(n_candidates, 2)</cite> and dtype
+<cite>tf.int32</cite> with the indices of the peaks that form the source and
+destination of each candidate connection. This indexes into the input
+<cite>peaks_sample</cite>. Can be generated using <cite>get_connection_candidates()</cite>.</p></li>
+<li><p><strong>max_edge_length</strong> – Maximum length expected for any connection as a scalar <cite>float</cite>
+in units of pixels (corresponding to <cite>peaks_sample</cite>. Scores of lines longer
+than this will be penalized. Useful for ignoring spurious connections that
+are far apart in space.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>The line scores as a <cite>tf.Tensor</cite> of shape <cite>(n_candidates,)</cite> and dtype
+<cite>tf.float32</cite>. Each score value is the average dot product between the PAFs and
+the normalized displacement vector between source and destination peaks.</p>
+<p>Scores range from roughly -1.5 to 1.0, where larger values indicate a better
+connectivity score for the candidate. Values can be larger or smaller due to
+prediction error.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function operates on a single sample (frame). For batches of multiple
+frames, use <cite>score_paf_lines_batch()</cite>.</p>
+<p>See also: get_paf_lines, score_paf_lines_batch</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="sleap.nn.paf_grouping.score_paf_lines_batch">
+<code class="sig-prename descclassname">sleap.nn.paf_grouping.</code><code class="sig-name descname">score_paf_lines_batch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pafs</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peaks</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">peak_channel_inds</span><span class="p">:</span> <span class="n">tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor</span></em>, <em class="sig-param"><span class="n">skeleton_edges</span><span class="p">:</span> <span class="n">tensorflow.python.framework.ops.Tensor</span></em>, <em class="sig-param"><span class="n">n_line_points</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">pafs_stride</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">max_edge_length_ratio</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">n_nodes</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">, </span>tensorflow.python.ops.ragged.ragged_tensor.RaggedTensor<span class="p">]</span><a class="reference internal" href="../_modules/sleap/nn/paf_grouping.html#score_paf_lines_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#sleap.nn.paf_grouping.score_paf_lines_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and score PAF lines formed between connection candidates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pafs</strong> – The batch of part affinity fields as a <cite>tf.Tensor</cite> of shape
+<cite>(n_samples, height, width, 2 * n_edges)</cite> and type <cite>tf.float32</cite>.</p></li>
+<li><p><strong>peaks</strong> – The coordinates of the peaks grouped by sample as a <cite>tf.RaggedTensor</cite> of
+shape <cite>(n_samples, (n_peaks), 2)</cite>.</p></li>
+<li><p><strong>peak_channel_inds</strong> – The channel (node) that each peak in <cite>peaks</cite> corresponds to
+as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_peaks))</cite> and dtype
+<cite>tf.int32</cite>.</p></li>
+<li><p><strong>skeleton_edges</strong> – The indices of the nodes that form the skeleton graph as a
+<cite>tf.Tensor</cite> of shape <cite>(n_edges, 2)</cite> and dtype <cite>tf.int32</cite> where each row
+corresponds to the source and destination node indices.</p></li>
+<li><p><strong>n_line_points</strong> – The number of points to interpolate between source and
+destination peaks in each connection candidate as a scalar integer. Values
+ranging from 5 to 10 are pretty reasonable.</p></li>
+<li><p><strong>pafs_stride</strong> – The stride (1/scale) of the PAFs that these lines will need to
+index into relative to the image. Coordinates in <cite>peaks</cite> will be divided by
+this value to adjust the indexing into the <cite>pafs</cite> tensor.</p></li>
+<li><p><strong>max_edge_length_ratio</strong> – The maximum expected length of a connected pair of points
+in relative image units. Candidate connections above this length will be
+penalized during matching.</p></li>
+<li><p><strong>n_nodes</strong> – The total number of nodes in the skeleton as a scalar integer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple of <cite>(edge_inds, edge_peak_inds, line_scores)</cite> with the connections and
+their scores based on the PAFs.</p>
+<p><cite>edge_inds</cite>: Sample-grouped indices of the edge in the skeleton that each
+connection corresponds to as <cite>tf.RaggedTensor</cite> of shape
+<cite>(n_samples, (n_candidates))</cite> and dtype <cite>tf.int32</cite>.</p>
+<p><cite>edge_peak_inds</cite>: Sample-grouped indices of the peaks that form each connection
+as a <cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_candidates), 2)</cite> and dtype
+<cite>tf.int32</cite>. The last axis corresponds to the <cite>[source, destination]</cite> peak
+indices. These index into the input <cite>peak_channel_inds</cite>.</p>
+<p><cite>line_scores</cite>: Sample-grouped scores for each candidate connection as
+<cite>tf.RaggedTensor</cite> of shape <cite>(n_samples, (n_candidates))</cite> and dtype <cite>tf.float32</cite>.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function handles the looping over samples in the batch and applies:</p>
+<ol class="arabic simple">
+<li><p><cite>get_connection_candidates()</cite>: Find peaks that form connections.</p></li>
+<li><p><cite>get_paf_lines()</cite>: Retrieve PAF vectors for each line.</p></li>
+<li><p><cite>score_paf_lines()</cite>: Compute connectivity score for each candidate.</p></li>
+</ol>
+<p>See also: get_connection_candidates, get_paf_lines, score_paf_lines</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">SLEAP</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/reference.html">Feature Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="sleap.diagnostic.html">sleap.diagnostic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.instance.html">sleap.instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.message.html">sleap.message</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.prefs.html">sleap.prefs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.rangelist.html">sleap.rangelist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.skeleton.html">sleap.skeleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.util.html">sleap.util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.version.html">sleap.version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.color.html">sleap.gui.color</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.commands.html">sleap.gui.commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dataviews.html">sleap.gui.dataviews</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.release_checker.html">sleap.gui.release_checker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.shortcuts.html">sleap.gui.shortcuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.state.html">sleap.gui.state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.suggestions.html">sleap.gui.suggestions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.anchors.html">sleap.gui.overlays.anchors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.base.html">sleap.gui.overlays.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.confmaps.html">sleap.gui.overlays.confmaps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.instance.html">sleap.gui.overlays.instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.pafs.html">sleap.gui.overlays.pafs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.overlays.tracks.html">sleap.gui.overlays.tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.configs.html">sleap.gui.learning.configs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.datagen.html">sleap.gui.learning.datagen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.dialog.html">sleap.gui.learning.dialog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.receptivefield.html">sleap.gui.learning.receptivefield</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.runners.html">sleap.gui.learning.runners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.learning.scopedkeydict.html">sleap.gui.learning.scopedkeydict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.delete.html">sleap.gui.dialogs.delete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.export_clip.html">sleap.gui.dialogs.export_clip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.filedialog.html">sleap.gui.dialogs.filedialog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.formbuilder.html">sleap.gui.dialogs.formbuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.importvideos.html">sleap.gui.dialogs.importvideos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.merge.html">sleap.gui.dialogs.merge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.message.html">sleap.gui.dialogs.message</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.missingfiles.html">sleap.gui.dialogs.missingfiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.dialogs.shortcuts.html">sleap.gui.dialogs.shortcuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.imagedir.html">sleap.gui.widgets.imagedir</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.multicheck.html">sleap.gui.widgets.multicheck</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.slider.html">sleap.gui.widgets.slider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.gui.widgets.video.html">sleap.gui.widgets.video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.align.html">sleap.info.align</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.feature_suggestions.html">sleap.info.feature_suggestions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.labels.html">sleap.info.labels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.metrics.html">sleap.info.metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.summary.html">sleap.info.summary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.trackcleaner.html">sleap.info.trackcleaner</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.info.write_tracking_h5.html">sleap.info.write_tracking_h5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.asyncvideo.html">sleap.io.asyncvideo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.convert.html">sleap.io.convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.dataset.html">sleap.io.dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.legacy.html">sleap.io.legacy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.pathutils.html">sleap.io.pathutils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.video.html">sleap.io.video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.videowriter.html">sleap.io.videowriter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.visuals.html">sleap.io.visuals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.adaptor.html">sleap.io.format.adaptor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.coco.html">sleap.io.format.coco</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.deeplabcut.html">sleap.io.format.deeplabcut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.deepposekit.html">sleap.io.format.deepposekit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.dispatch.html">sleap.io.format.dispatch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.filehandle.html">sleap.io.format.filehandle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.genericjson.html">sleap.io.format.genericjson</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.hdf5.html">sleap.io.format.hdf5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.labels_json.html">sleap.io.format.labels_json</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.leap_matlab.html">sleap.io.format.leap_matlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.main.html">sleap.io.format.main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.sleap_analysis.html">sleap.io.format.sleap_analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.io.format.text.html">sleap.io.format.text</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.callbacks.html">sleap.nn.callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.evals.html">sleap.nn.evals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.heads.html">sleap.nn.heads</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.inference.html">sleap.nn.inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.losses.html">sleap.nn.losses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.model.html">sleap.nn.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.monitor.html">sleap.nn.monitor</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">sleap.nn.paf_grouping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.peak_finding.html">sleap.nn.peak_finding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.system.html">sleap.nn.system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.tracking.html">sleap.nn.tracking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.training.html">sleap.nn.training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.utils.html">sleap.nn.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.viz.html">sleap.nn.viz</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.data.html">sleap.nn.config.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.model.html">sleap.nn.config.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.optimization.html">sleap.nn.config.optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.outputs.html">sleap.nn.config.outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.training_job.html">sleap.nn.config.training_job</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.config.utils.html">sleap.nn.config.utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.common.html">sleap.nn.architectures.common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.encoder_decoder.html">sleap.nn.architectures.encoder_decoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.hourglass.html">sleap.nn.architectures.hourglass</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.hrnet.html">sleap.nn.architectures.hrnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.leap.html">sleap.nn.architectures.leap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.pretrained_encoders.html">sleap.nn.architectures.pretrained_encoders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.resnet.html">sleap.nn.architectures.resnet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.unet.html">sleap.nn.architectures.unet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.architectures.upsampling.html">sleap.nn.architectures.upsampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.tracker.components.html">sleap.nn.tracker.components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.tracker.kalman.html">sleap.nn.tracker.kalman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.augmentation.html">sleap.nn.data.augmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.confidence_maps.html">sleap.nn.data.confidence_maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.dataset_ops.html">sleap.nn.data.dataset_ops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.edge_maps.html">sleap.nn.data.edge_maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.general.html">sleap.nn.data.general</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.grouping.html">sleap.nn.data.grouping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.inference.html">sleap.nn.data.inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.instance_centroids.html">sleap.nn.data.instance_centroids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.instance_cropping.html">sleap.nn.data.instance_cropping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.normalization.html">sleap.nn.data.normalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.offset_regression.html">sleap.nn.data.offset_regression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.pipelines.html">sleap.nn.data.pipelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.providers.html">sleap.nn.data.providers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.resizing.html">sleap.nn.data.resizing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.training.html">sleap.nn.data.training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sleap.nn.data.utils.html">sleap.nn.data.utils</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../api.html">Developer API</a><ul>
+      <li>Previous: <a href="sleap.nn.monitor.html" title="previous chapter">sleap.nn.monitor</a></li>
+      <li>Next: <a href="sleap.nn.peak_finding.html" title="next chapter">sleap.nn.peak_finding</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019–2020, Murthy Lab @ Princeton.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/_autosummary/sleap.nn.paf_grouping.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

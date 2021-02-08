@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sleap.nn.data.augmentation &#8212; SLEAP  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for sleap.nn.data.augmentation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Transformers for applying data augmentation.&quot;&quot;&quot;</span>
+
+<span class="c1"># Monkey patch for: https://github.com/aleju/imgaug/issues/537</span>
+<span class="c1"># TODO: Fix when PyPI/conda packages are available for version fencing.</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="s2">&quot;_bit_generator&quot;</span><span class="p">):</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">bit_generator</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">_bit_generator</span>
+
+<span class="kn">import</span> <span class="nn">sleap</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">attr</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span> <span class="nn">imgaug</span> <span class="k">as</span> <span class="nn">ia</span>
+<span class="kn">import</span> <span class="nn">imgaug.augmenters</span> <span class="k">as</span> <span class="nn">iaa</span>
+<span class="kn">from</span> <span class="nn">sleap.nn.config</span> <span class="kn">import</span> <span class="n">AugmentationConfig</span>
+<span class="kn">from</span> <span class="nn">sleap.nn.data.instance_cropping</span> <span class="kn">import</span> <span class="n">crop_bboxes</span>
+
+
+<div class="viewcode-block" id="flip_instances_lr"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.flip_instances_lr">[docs]</a><span class="k">def</span> <span class="nf">flip_instances_lr</span><span class="p">(</span>
+    <span class="n">instances</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">img_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">symmetric_inds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Flip a set of instance points horizontally with symmetric node adjustment.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        instances: Instance points as a `tf.Tensor` of shape `(n_instances, n_nodes, 2)`</span>
+<span class="sd">            and dtype `tf.float32`.</span>
+<span class="sd">        img_width: Width of image in the same units as `instances`.</span>
+<span class="sd">        symmetric_inds: Indices of symmetric pairs of nodes as a `tf.Tensor` of shape</span>
+<span class="sd">            `(n_symmetries, 2)` and dtype `tf.int32`. Each row contains the indices of</span>
+<span class="sd">            nodes that are mirror symmetric, e.g., left/right body parts. The ordering</span>
+<span class="sd">            of the list or which node comes first (e.g., left/right vs right/left) does</span>
+<span class="sd">            not matter. Each pair of nodes will be swapped to account for the</span>
+<span class="sd">            reflection if this is not `None` (the default).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The instance points with x-coordinates flipped horizontally.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">instances</span> <span class="o">=</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">([[[</span><span class="n">img_width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]],</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="n">instances</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span>
+        <span class="p">[[[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]],</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">symmetric_inds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_instances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">instances</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_symmetries</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">inst_inds</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="n">n_instances</span><span class="p">),</span> <span class="n">n_symmetries</span><span class="p">),</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">sym_inds1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">sym_inds2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">inst_inds</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">inst_inds</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">sym_inds1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">sym_inds1</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">sym_inds2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">sym_inds2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+        <span class="n">subs1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">inst_inds</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">sym_inds1</span><span class="p">,</span> <span class="p">[</span><span class="n">n_instances</span><span class="p">,</span> <span class="mi">1</span><span class="p">])],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">subs2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">inst_inds</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">sym_inds2</span><span class="p">,</span> <span class="p">[</span><span class="n">n_instances</span><span class="p">,</span> <span class="mi">1</span><span class="p">])],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">pts1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs1</span><span class="p">)</span>
+        <span class="n">pts2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs2</span><span class="p">)</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tensor_scatter_nd_update</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs1</span><span class="p">,</span> <span class="n">pts2</span><span class="p">)</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tensor_scatter_nd_update</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs2</span><span class="p">,</span> <span class="n">pts1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">instances</span></div>
+
+
+<div class="viewcode-block" id="flip_instances_ud"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.flip_instances_ud">[docs]</a><span class="k">def</span> <span class="nf">flip_instances_ud</span><span class="p">(</span>
+    <span class="n">instances</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">img_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">symmetric_inds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Flip a set of instance points vertically with symmetric node adjustment.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        instances: Instance points as a `tf.Tensor` of shape `(n_instances, n_nodes, 2)`</span>
+<span class="sd">            and dtype `tf.float32`.</span>
+<span class="sd">        img_height: Height of image in the same units as `instances`.</span>
+<span class="sd">        symmetric_inds: Indices of symmetric pairs of nodes as a `tf.Tensor` of shape</span>
+<span class="sd">            `(n_symmetries, 2)` and dtype `tf.int32`. Each row contains the indices of</span>
+<span class="sd">            nodes that are mirror symmetric, e.g., left/right body parts. The ordering</span>
+<span class="sd">            of the list or which node comes first (e.g., left/right vs right/left) does</span>
+<span class="sd">            not matter. Each pair of nodes will be swapped to account for the</span>
+<span class="sd">            reflection if this is not `None` (the default).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The instance points with y-coordinates flipped horizontally.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">instances</span> <span class="o">=</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">([[[</span><span class="mi">0</span><span class="p">,</span> <span class="n">img_height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]],</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="n">instances</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span>
+        <span class="p">[[[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]],</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">symmetric_inds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_instances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">instances</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_symmetries</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">inst_inds</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="n">n_instances</span><span class="p">),</span> <span class="n">n_symmetries</span><span class="p">),</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">sym_inds1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">sym_inds2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">inst_inds</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">inst_inds</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">sym_inds1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">sym_inds1</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">sym_inds2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">sym_inds2</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+        <span class="n">subs1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">inst_inds</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">sym_inds1</span><span class="p">,</span> <span class="p">[</span><span class="n">n_instances</span><span class="p">,</span> <span class="mi">1</span><span class="p">])],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">subs2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">inst_inds</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">sym_inds2</span><span class="p">,</span> <span class="p">[</span><span class="n">n_instances</span><span class="p">,</span> <span class="mi">1</span><span class="p">])],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">pts1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs1</span><span class="p">)</span>
+        <span class="n">pts2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs2</span><span class="p">)</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tensor_scatter_nd_update</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs1</span><span class="p">,</span> <span class="n">pts2</span><span class="p">)</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tensor_scatter_nd_update</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">subs2</span><span class="p">,</span> <span class="n">pts1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">instances</span></div>
+
+
+<div class="viewcode-block" id="ImgaugAugmenter"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">auto_attribs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ImgaugAugmenter</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Data transformer based on the `imgaug` library.</span>
+
+<span class="sd">    This class can generate a `tf.data.Dataset` from an existing one that generates</span>
+<span class="sd">    image and instance data. Element of the output dataset will have a set of</span>
+<span class="sd">    augmentation transformations applied.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        augmenter: An instance of `imgaug.augmenters.Sequential` that will be applied to</span>
+<span class="sd">            each element of the input dataset.</span>
+<span class="sd">        image_key: Name of the example key where the image is stored. Defaults to</span>
+<span class="sd">            &quot;image&quot;.</span>
+<span class="sd">        instances_key: Name of the example key where the instance points are stored.</span>
+<span class="sd">            Defaults to &quot;instances&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span>
+    <span class="n">image_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span>
+    <span class="n">instances_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;instances&quot;</span>
+
+<div class="viewcode-block" id="ImgaugAugmenter.from_config"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.from_config">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">AugmentationConfig</span><span class="p">,</span>
+        <span class="n">image_key</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span>
+        <span class="n">instances_key</span><span class="p">:</span> <span class="n">Text</span> <span class="o">=</span> <span class="s2">&quot;instances&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ImgaugAugmenter&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create an augmenter from a set of configuration parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config: An `AugmentationConfig` instance with the desired parameters.</span>
+<span class="sd">            image_key: Name of the example key where the image is stored. Defaults to</span>
+<span class="sd">                &quot;image&quot;.</span>
+<span class="sd">            instances_key: Name of the example key where the instance points are stored.</span>
+<span class="sd">                Defaults to &quot;instances&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An instance of `ImgaugAugmenter` with the specified augmentation</span>
+<span class="sd">            configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">aug_stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">rotate</span><span class="p">:</span>
+            <span class="n">aug_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">iaa</span><span class="o">.</span><span class="n">Affine</span><span class="p">(</span>
+                    <span class="n">rotate</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">rotation_min_angle</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">rotation_max_angle</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">translate</span><span class="p">:</span>
+            <span class="n">aug_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">iaa</span><span class="o">.</span><span class="n">Affine</span><span class="p">(</span>
+                    <span class="n">translate_px</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">translate_min</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">translate_max</span><span class="p">),</span>
+                        <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">translate_min</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">translate_max</span><span class="p">),</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">scale</span><span class="p">:</span>
+            <span class="n">aug_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iaa</span><span class="o">.</span><span class="n">Affine</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">scale_min</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">scale_max</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">uniform_noise</span><span class="p">:</span>
+            <span class="n">aug_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">iaa</span><span class="o">.</span><span class="n">AddElementwise</span><span class="p">(</span>
+                    <span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">uniform_noise_min_val</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">uniform_noise_max_val</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">gaussian_noise</span><span class="p">:</span>
+            <span class="n">aug_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">iaa</span><span class="o">.</span><span class="n">AdditiveGaussianNoise</span><span class="p">(</span>
+                    <span class="n">loc</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">gaussian_noise_mean</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">gaussian_noise_stddev</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">contrast</span><span class="p">:</span>
+            <span class="n">aug_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">iaa</span><span class="o">.</span><span class="n">GammaContrast</span><span class="p">(</span>
+                    <span class="n">gamma</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">contrast_min_gamma</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">contrast_max_gamma</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">brightness</span><span class="p">:</span>
+            <span class="n">aug_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">iaa</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">brightness_min_val</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">brightness_max_val</span><span class="p">))</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">augmenter</span><span class="o">=</span><span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aug_stack</span><span class="p">),</span>
+            <span class="n">image_key</span><span class="o">=</span><span class="n">image_key</span><span class="p">,</span>
+            <span class="n">instances_key</span><span class="o">=</span><span class="n">instances_key</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Text</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Return the keys that incoming elements are expected to have.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instances_key</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Text</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Return the keys that outgoing elements will have.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_keys</span>
+
+<div class="viewcode-block" id="ImgaugAugmenter.transform_dataset"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.ImgaugAugmenter.transform_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">transform_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ds</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create a `tf.data.Dataset` with elements containing augmented data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_ds: A dataset with elements that contain the keys &quot;image&quot; and</span>
+<span class="sd">                &quot;instances&quot;. This is typically raw data from a data provider.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A `tf.data.Dataset` with the same keys as the input, but with images and</span>
+<span class="sd">            instance points updated with the applied augmentations.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            The &quot;scale&quot; key in examples are not modified when scaling augmentation is</span>
+<span class="sd">            applied.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Define augmentation function to map over each sample.</span>
+        <span class="k">def</span> <span class="nf">py_augment</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">instances</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Local processing function that will not be autographed.&quot;&quot;&quot;</span>
+            <span class="c1"># Ensure that the transformations applied to all data within this</span>
+            <span class="c1"># example are kept consistent.</span>
+            <span class="n">aug_det</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">augmenter</span><span class="o">.</span><span class="n">to_deterministic</span><span class="p">()</span>
+
+            <span class="c1"># Augment the image.</span>
+            <span class="n">aug_img</span> <span class="o">=</span> <span class="n">aug_det</span><span class="o">.</span><span class="n">augment_image</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+            <span class="c1"># Augment each set of points for each instance.</span>
+            <span class="n">aug_instances</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">instances</span><span class="p">:</span>
+                <span class="n">kps</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">KeypointsOnImage</span><span class="o">.</span><span class="n">from_xy_array</span><span class="p">(</span>
+                    <span class="n">instance</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">aug_instance</span> <span class="o">=</span> <span class="n">aug_det</span><span class="o">.</span><span class="n">augment_keypoints</span><span class="p">(</span><span class="n">kps</span><span class="p">)</span><span class="o">.</span><span class="n">to_xy_array</span><span class="p">()</span>
+                <span class="n">aug_instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">aug_instance</span><span class="p">)</span>
+
+            <span class="c1"># Convert the results to tensors.</span>
+            <span class="c1"># aug_img = tf.convert_to_tensor(aug_img, dtype=image.dtype)</span>
+
+            <span class="c1"># This will get converted to a rank 3 tensor (n_instances, n_nodes, 2).</span>
+            <span class="n">aug_instances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">aug_instances</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># aug_instances = [</span>
+            <span class="c1">#     tf.convert_to_tensor(x, dtype=instances.dtype) for x in aug_instances</span>
+            <span class="c1"># ]</span>
+
+            <span class="k">return</span> <span class="n">aug_img</span><span class="p">,</span> <span class="n">aug_instances</span>
+
+        <span class="k">def</span> <span class="nf">augment</span><span class="p">(</span><span class="n">frame_data</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Wrap local processing function for dataset mapping.&quot;&quot;&quot;</span>
+            <span class="n">image</span><span class="p">,</span> <span class="n">instances</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">py_function</span><span class="p">(</span>
+                <span class="n">py_augment</span><span class="p">,</span>
+                <span class="p">[</span><span class="n">frame_data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">],</span> <span class="n">frame_data</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">]],</span>
+                <span class="p">[</span><span class="n">frame_data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">frame_data</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">image</span><span class="o">.</span><span class="n">set_shape</span><span class="p">(</span><span class="n">frame_data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_shape</span><span class="p">())</span>
+            <span class="n">instances</span><span class="o">.</span><span class="n">set_shape</span><span class="p">(</span><span class="n">frame_data</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_shape</span><span class="p">())</span>
+            <span class="n">frame_data</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">image</span><span class="p">,</span> <span class="s2">&quot;instances&quot;</span><span class="p">:</span> <span class="n">instances</span><span class="p">})</span>
+            <span class="k">return</span> <span class="n">frame_data</span>
+
+        <span class="c1"># Apply the augmentation to each element.</span>
+        <span class="c1"># Note: We map sequentially since imgaug gets slower with tf.data parallelism.</span>
+        <span class="n">output_ds</span> <span class="o">=</span> <span class="n">input_ds</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">augment</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">output_ds</span></div></div>
+
+
+<div class="viewcode-block" id="RandomCropper"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomCropper">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">auto_attribs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RandomCropper</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Data transformer for applying random crops to input images.</span>
+
+<span class="sd">    This class can generate a `tf.data.Dataset` from an existing one that generates</span>
+<span class="sd">    image and instance data. Element of the output dataset will have random crops</span>
+<span class="sd">    applied.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        crop_height: The height of the cropped region in pixels.</span>
+<span class="sd">        crop_width: The width of the cropped region in pixels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">crop_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="n">crop_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;instances&quot;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;instances&quot;</span><span class="p">,</span> <span class="s2">&quot;crop_bbox&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="RandomCropper.transform_dataset"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomCropper.transform_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">transform_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ds</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a `tf.data.Dataset` with elements containing augmented data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_ds: A dataset with elements that contain the keys &quot;image&quot; and</span>
+<span class="sd">                &quot;instances&quot;. This is typically raw data from a data provider.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A `tf.data.Dataset` with the same keys as the input, but with images and</span>
+<span class="sd">            instance points updated with the applied random crop.</span>
+
+<span class="sd">            Additionally, the `&quot;crop_bbox&quot;` key will contain the bounding box of the</span>
+<span class="sd">            crop in the form `[y1, x1, y2, x2]`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">random_crop</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Apply random crop to an example.&quot;&quot;&quot;</span>
+            <span class="c1"># Generate random value for the top-left of the crop.</span>
+            <span class="n">img_width</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">img_height</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+                <span class="p">(),</span> <span class="n">minval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxval</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">img_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">crop_width</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+                <span class="p">(),</span> <span class="n">minval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxval</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">img_height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">crop_height</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">bbox</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">dy</span><span class="p">,</span>
+                        <span class="n">dx</span><span class="p">,</span>
+                        <span class="n">dy</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">crop_height</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">dx</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">crop_width</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="p">],</span>
+                    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;crop_bbox&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bbox</span>
+            <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">crop_bboxes</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">],</span> <span class="n">bbox</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ex</span>
+
+        <span class="k">return</span> <span class="n">input_ds</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">random_crop</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="RandomFlipper"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomFlipper">[docs]</a><span class="nd">@attr</span><span class="o">.</span><span class="n">s</span><span class="p">(</span><span class="n">auto_attribs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RandomFlipper</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Data transformer for applying random flipping to input images.</span>
+
+<span class="sd">    This class can generate a `tf.data.Dataset` from an existing one that generates</span>
+<span class="sd">    image and instance data. Elements of the output dataset will have random horizontal</span>
+<span class="sd">    flips applied.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        symmetric_inds: Indices of symmetric pairs of nodes as a an array of shape</span>
+<span class="sd">            `(n_symmetries, 2)`. Each row contains the indices of nodes that are mirror</span>
+<span class="sd">            symmetric, e.g., left/right body parts. The ordering of the list or which</span>
+<span class="sd">            node comes first (e.g., left/right vs right/left) does not matter. Each pair</span>
+<span class="sd">            of nodes will be swapped to account for the reflection if this is not `None`</span>
+<span class="sd">            (the default).</span>
+<span class="sd">        horizontal: If `True` (the default), flips are applied horizontally instead of</span>
+<span class="sd">            vertically.</span>
+<span class="sd">        probability: The probability that the augmentation should be applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">symmetric_inds</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">horizontal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">probability</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+<div class="viewcode-block" id="RandomFlipper.from_skeleton"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomFlipper.from_skeleton">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_skeleton</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">skeleton</span><span class="p">:</span> <span class="n">sleap</span><span class="o">.</span><span class="n">Skeleton</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">probability</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RandomFlipper&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Create an instance of `RandomFlipper` from a skeleton.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            skeleton: A `sleap.Skeleton` that may define symmetric nodes.</span>
+<span class="sd">            horizontal: If `True` (the default), flips are applied horizontally instead</span>
+<span class="sd">                of vertically.</span>
+<span class="sd">            probability: The probability that the augmentation should be applied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An instance of `RandomFlipper`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">symmetric_inds</span><span class="o">=</span><span class="n">skeleton</span><span class="o">.</span><span class="n">symmetric_inds</span><span class="p">,</span>
+            <span class="n">horizontal</span><span class="o">=</span><span class="n">horizontal</span><span class="p">,</span>
+            <span class="n">probability</span><span class="o">=</span><span class="n">probability</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;instances&quot;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_keys</span>
+
+<div class="viewcode-block" id="RandomFlipper.transform_dataset"><a class="viewcode-back" href="../../../../_autosummary/sleap.nn.data.augmentation.html#sleap.nn.data.augmentation.RandomFlipper.transform_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">transform_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ds</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a `tf.data.Dataset` with elements containing augmented data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_ds: A dataset with elements that contain the keys `&quot;image&quot;` and</span>
+<span class="sd">                `&quot;instances&quot;`. This is typically raw data from a data provider.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A `tf.data.Dataset` with the same keys as the input, but with images and</span>
+<span class="sd">            instance points updated with the applied random flip.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">symmetric_inds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">symmetric_inds</span>
+        <span class="k">if</span> <span class="n">symmetric_inds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">symmetric_inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">symmetric_inds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">symmetric_inds</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">def</span> <span class="nf">random_flip</span><span class="p">(</span><span class="n">ex</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Apply random flip to an example.&quot;&quot;&quot;</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((),</span> <span class="n">minval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">probability</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal</span><span class="p">:</span>
+                    <span class="n">img_width</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flip_instances_lr</span><span class="p">(</span>
+                        <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">],</span> <span class="n">img_width</span><span class="p">,</span> <span class="n">symmetric_inds</span><span class="o">=</span><span class="n">symmetric_inds</span>
+                    <span class="p">)</span>
+                    <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">flip_left_right</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">img_height</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flip_instances_ud</span><span class="p">(</span>
+                        <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;instances&quot;</span><span class="p">],</span> <span class="n">img_height</span><span class="p">,</span> <span class="n">symmetric_inds</span><span class="o">=</span><span class="n">symmetric_inds</span>
+                    <span class="p">)</span>
+                    <span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">flip_up_down</span><span class="p">(</span><span class="n">ex</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">ex</span>
+
+        <span class="k">return</span> <span class="n">input_ds</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">random_flip</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">SLEAP</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/reference.html">Feature Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019–2020, Murthy Lab @ Princeton.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
